@@ -1,9 +1,15 @@
 package com.example.derek.trademeapi.ui.listings
 
 import android.content.Context
+import android.databinding.DataBindingUtil
+import android.databinding.ViewDataBinding
 import android.os.Bundle
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.Toolbar
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import com.example.derek.trademeapi.BR
 import com.example.derek.trademeapi.R
 import com.example.derek.trademeapi.base.BaseActivity
 import com.example.derek.trademeapi.model.Category
@@ -12,20 +18,36 @@ import com.example.derek.trademeapi.util.bindView
 import timber.log.Timber
 import javax.inject.Inject
 
+
 /**
  * Created by derek on 30/04/18.
  */
-class ListingActivity : BaseActivity(), ListingView{
+class ListingActivity : BaseActivity(), ListingView {
 
-    @Inject override lateinit var presenter: ListingPresenter
+    @Inject
+    override lateinit var presenter: ListingPresenter
 
     private val toolbar: Toolbar by bindView(R.id.toolbar)
-    private val recyclerView: RecyclerView by bindView(R.id.recycler_view)
+    private val adapter: Adapter by lazy { Adapter(presenter) }
+
+    private val listingRecyclerView: RecyclerView by bindView(R.id.recycler_view)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.listing_activity)
+        setContentView(R.layout.activity_listing)
         setSupportActionBar(toolbar)
+
+        listingRecyclerView.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        listingRecyclerView.adapter = adapter
+
+        val runnableCode = object : Runnable {
+            override fun run() {
+                presenter.loadMoreListings(2)
+                toolbar.postDelayed(this, 3000)
+            }
+        }
+
+        runnableCode.run()
     }
 
     override fun onResume() {
@@ -38,17 +60,52 @@ class ListingActivity : BaseActivity(), ListingView{
         presenter.onViewDestroyed()
     }
 
+    override fun getContext(): Context? = this.applicationContext
+
+
     override fun setCurrentCategory(currentCategory: Category) {
         Timber.d("setCurrentCategory: $currentCategory")
     }
 
-    override fun getListingsAdapter(): RecyclerView.Adapter<*> {
+
+    override fun scrollToTop() {
         TODO("not implemented")
     }
 
     override fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?) {
         Timber.d("updateListings length: ${listings.size} from: $from, to: $to")
+        adapter.notifyItemRangeChanged(from ?: 0, to ?: listings.size)
     }
 
-    override fun getContext(): Context? = this.applicationContext
+
+    /** listing */
+
+    class ItemViewHolder(private val binding: ViewDataBinding) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: Listing) {
+            binding.setVariable(BR.listing, item)
+            binding.executePendingBindings()
+        }
+    }
+
+    class Adapter(private val presenter: ListingPresenter) : RecyclerView.Adapter<ItemViewHolder>() {
+//        @Inject lateinit var presenter: ListingPresenter //TODO: why doesn't this work?
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
+            val layoutInflater = LayoutInflater.from(parent.context)
+            val binding = DataBindingUtil.inflate<ViewDataBinding>(layoutInflater, R.layout.view_listing_item, parent, false)
+            return ItemViewHolder(binding)
+        }
+
+        override fun getItemCount(): Int {
+            return presenter.getListingSize()
+        }
+//        override fun getItemCount(): Int = presenter.getListingSize()
+
+        override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
+            val listing = presenter.getListingAtIndex(position)
+            holder.bind(listing)
+        }
+    }
+
+
 }

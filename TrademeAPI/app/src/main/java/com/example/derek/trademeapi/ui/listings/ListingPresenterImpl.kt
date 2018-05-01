@@ -15,12 +15,18 @@ import javax.inject.Inject
  */
 class ListingPresenterImpl @Inject constructor(override val view: ListingView) : ListingPresenter {
 
-    @Inject lateinit var apiService: TradeMeApiService
-
 
     private val compositeDisposable: CompositeDisposable by lazy { CompositeDisposable() }
+
+
+    @Inject lateinit var apiService: TradeMeApiService
     private lateinit var rootCategory: Category
+    private lateinit var currentCategory: Category
+
+
+//    private val listingList = ArrayList<String>(30)
     private val listingList = ArrayList<Listing>(30)
+    private var currentListingIndex = 0 // TODO: persistent of configuration change
 
     init {
         Timber.d("ListingsPresenterImpl view set: $view")
@@ -45,6 +51,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext {
                     rootCategory = it
+                    onSelectCategory(it)
                     Timber.d("rootCategory set: $rootCategory")
                 }
                 .doOnNext {
@@ -55,16 +62,37 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     }
 
     override fun onSelectCategory(currentCategory: Category) {
-        loadMoreListings(20)
+        this.currentCategory = currentCategory
+        loadMoreListings(2)
+    }
+
+    /** listings */
+
+    override fun scrollToTop() {
+        currentListingIndex = 0
+        view.scrollToTop()
     }
 
     override fun loadMoreListings(count: Int?) {
+        Timber.d("loadMoreListings: $count")
         val currentSize = listingList.size
+
+        for (i in 1..(count ?: 10)) {
+            val listing = Listing(i, "title: $i",
+                    pictureHref = "https://images.tmsandbox.co.nz/photoserver/thumb/893921.jpg",
+                    category = "fake category", startPrice = 0.5f + i
+            )
+            listingList.add(listing)
+        }
+
         view.updateListings(listingList, currentSize, listingList.size)
     }
 
+    override fun getListingSize(): Int = listingList.size
 
-    /** methods not currently in use */
+    override fun getListingAtIndex(index : Int): Listing = listingList[index]
+
+    /** methods that not currently in use */
 
     /** load more category on demand */
     // https://stackoverflow.com/questions/43364077/rxjava-load-items-on-demand

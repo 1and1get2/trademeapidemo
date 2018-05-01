@@ -2,12 +2,12 @@ package com.example.derek.trademeapi.api
 
 import com.example.derek.trademeapi.api.moshiadapters.TradeMeDateTime
 import com.example.derek.trademeapi.model.Category
+import com.example.derek.trademeapi.model.ListedItemDetail
 import com.example.derek.trademeapi.model.SearchResult
 import io.reactivex.Observable
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
-import trademe.demo.derek.trademedemo.model.ListedItemDetail
 
 interface TradeMeApiService {
     // todo: could be simplified using @QueryMap?

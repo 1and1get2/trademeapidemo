@@ -1,6 +1,5 @@
 package com.example.derek.trademeapi.ui.listings
 
-import android.support.v7.widget.RecyclerView
 import com.example.derek.trademeapi.base.BasePresenter
 import com.example.derek.trademeapi.base.BaseView
 import com.example.derek.trademeapi.model.Category
@@ -11,17 +10,24 @@ import com.example.derek.trademeapi.model.Listing
  */
 
 interface ListingView : BaseView<ListingPresenter> {
+    /** category */
     fun setCurrentCategory(currentCategory: Category)
 
-    fun getListingsAdapter() : RecyclerView.Adapter<*> //?
+    /** listings */
+//    fun updateListings(listings : MutableList<String>, from: Int?, to: Int?)
     fun updateListings(listings : MutableList<Listing>, from: Int?, to: Int?)
+    fun scrollToTop()
 }
 
 
 interface ListingPresenter : BasePresenter<ListingView> {
+    /** category */
     fun loadCategories()
     fun onSelectCategory(currentCategory: Category)
 
-
+    /** listings */
     fun loadMoreListings(count : Int?)
+    fun scrollToTop()
+    fun getListingSize() : Int
+    fun getListingAtIndex(index : Int) : Listing
 }

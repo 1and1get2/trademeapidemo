@@ -1,4 +1,4 @@
-package trademe.demo.derek.trademedemo.model
+package com.example.derek.trademeapi.model
 
 import com.example.derek.trademeapi.api.moshiadapters.TradeMeDateTime
 import com.squareup.moshi.Json
