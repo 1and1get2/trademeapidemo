@@ -15,19 +15,21 @@ interface ListingView : BaseView<ListingPresenter> {
 
     /** listings */
 //    fun updateListings(listings : MutableList<String>, from: Int?, to: Int?)
-    fun updateListings(listings : MutableList<Listing>, from: Int?, to: Int?)
-    fun scrollToTop()
+    fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?)
+    fun scrollToPosition(position: Int)
 }
 
 
 interface ListingPresenter : BasePresenter<ListingView> {
     /** category */
     fun loadCategories()
+
     fun onSelectCategory(currentCategory: Category)
 
     /** listings */
-    fun loadMoreListings(count : Int?)
+    fun loadMoreListings(count: Int?)
+
     fun scrollToTop()
-    fun getListingSize() : Int
-    fun getListingAtIndex(index : Int) : Listing
+    fun getListingSize(): Int
+    fun getListingAtIndex(index: Int): Listing
 }

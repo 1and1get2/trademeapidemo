@@ -24,7 +24,6 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     private lateinit var currentCategory: Category
 
 
-//    private val listingList = ArrayList<String>(30)
     private val listingList = ArrayList<Listing>(30)
     private var currentListingIndex = 0 // TODO: persistent of configuration change
 
@@ -70,7 +69,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
     override fun scrollToTop() {
         currentListingIndex = 0
-        view.scrollToTop()
+        view.scrollToPosition(0)
     }
 
     override fun loadMoreListings(count: Int?) {
@@ -98,7 +97,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     // https://stackoverflow.com/questions/43364077/rxjava-load-items-on-demand
     // https://stackoverflow.com/questions/28176072/in-rxjava-how-to-pass-a-variable-along-when-chaining-observables
     // https://stackoverflow.com/questions/31246088/how-to-do-recursive-observable-call-in-rxjava
-
+    // https://medium.com/@stevenlow1983/rx-java-and-recursion-719f8ee1977a
     fun preFetchCategory(parent: Category): Observable<Category> {
         return when {
             parent.isLeaf -> {

@@ -1,10 +1,11 @@
 package com.example.derek.trademeapi.ui.listings
 
 import android.content.Context
+import android.content.res.Configuration
 import android.databinding.DataBindingUtil
 import android.databinding.ViewDataBinding
 import android.os.Bundle
-import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
@@ -14,6 +15,7 @@ import com.example.derek.trademeapi.R
 import com.example.derek.trademeapi.base.BaseActivity
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
+import com.example.derek.trademeapi.util.GridLayoutColumnQty
 import com.example.derek.trademeapi.util.bindView
 import timber.log.Timber
 import javax.inject.Inject
@@ -37,17 +39,21 @@ class ListingActivity : BaseActivity(), ListingView {
         setContentView(R.layout.activity_listing)
         setSupportActionBar(toolbar)
 
-        listingRecyclerView.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        val portrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
+        val gridLayoutColumnQty = GridLayoutColumnQty(applicationContext, R.layout.view_listing_item)
+        val column = if (portrait) 2 else gridLayoutColumnQty.calculateNoOfColumns()
+
+        listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column)
         listingRecyclerView.adapter = adapter
 
-        val runnableCode = object : Runnable {
+
+        // fake data
+        object : Runnable {
             override fun run() {
                 presenter.loadMoreListings(2)
                 toolbar.postDelayed(this, 3000)
             }
-        }
-
-        runnableCode.run()
+        }.also { it.run() }
     }
 
     override fun onResume() {
@@ -68,8 +74,8 @@ class ListingActivity : BaseActivity(), ListingView {
     }
 
 
-    override fun scrollToTop() {
-        TODO("not implemented")
+    override fun scrollToPosition(position: Int) {
+        listingRecyclerView.scrollToPosition(position)
     }
 
     override fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?) {

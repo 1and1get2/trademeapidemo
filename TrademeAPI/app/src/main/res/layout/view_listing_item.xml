@@ -16,59 +16,40 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:layout_margin="10dp"
         app:cardCornerRadius="4dp">
 
-        <android.support.constraint.ConstraintLayout
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical">
+
 
             <ImageView
                 android:id="@+id/item_image_view"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="90dp"
-                android:minHeight="90dp"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
                 android:scaleType="fitXY"
-                app:imageUrl="@{listing.pictureHref}"
-                app:layout_constraintBottom_toTopOf="parent"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent" />
-
-<!--            <android.support.constraint.Guideline
-                android:id="@+id/item_text_guide_line"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                app:layout_constraintBottom_toTopOf="@id/item_id_text_view"
-                app:layout_constraintLeft_toLeftOf="@id/item_image_view"
-                app:layout_constraintRight_toRightOf="@id/item_image_view"
-                />-->
+                app:imageUrl="@{listing.pictureHref}"/>
 
             <TextView
                 android:id="@+id/item_id_text_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minWidth="40dp"
-                android:text="@{Integer.toString(listing.listingId)}"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/item_image_view" />
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp"
+                android:text="@{Integer.toString(listing.listingId)}" />
 
             <TextView
                 android:id="@+id/item_title_text_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@{listing.title}"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintRight_toRightOf="@id/item_id_text_view"
-                app:layout_constraintTop_toBottomOf="@+id/item_id_text_view" />
+                android:layout_marginStart="30dp"
+                android:layout_marginEnd="30dp"
+                android:text="@{listing.title}" />
 
-        </android.support.constraint.ConstraintLayout>
-
-        <TextView
-            android:id="@+id/info_text"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+        </LinearLayout>
     </android.support.v7.widget.CardView>
 
 </layout>
