@@ -35,7 +35,7 @@ abstract class NetModule {
 
             return OkHttpClient.Builder()
                     .addInterceptor(AuthenticationHeaderInterceptor())
-                    .addInterceptor(loggingInterceptor)//.also { it.networkInterceptors().add(StethoInterceptor()) }
+//                    .addInterceptor(loggingInterceptor)//.also { it.networkInterceptors().add(StethoInterceptor()) }
                     .build()
         }
 

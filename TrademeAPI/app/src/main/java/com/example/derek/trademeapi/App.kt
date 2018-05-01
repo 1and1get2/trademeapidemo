@@ -26,21 +26,18 @@ class App : Application(), HasActivityInjector {
         }
     }
 
-    private lateinit var mInstance: App
+
     @Inject
     lateinit var activityInjector : DispatchingAndroidInjector<Activity>
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
-        mInstance = this
     }
 
     override fun onCreate() {
         super.onCreate()
-//        DaggerAppComponent.builder().create(this)
-//                .inject(this)
-//        DaggerAppComponent.builder().create(this).inject(this)/*.inject(this)*/
 
+        DaggerAppComponent.builder().create(this).inject(this)
 
         if (BuildConfig.DEBUG) {
             Timber.plant(DebugTree())

@@ -2,8 +2,8 @@ package com.example.derek.trademeapi
 
 import android.app.Application
 import com.example.derek.trademeapi.inject.scope.PerActivity
-import com.example.derek.trademeapi.ui.main.MainActivity
-import com.example.derek.trademeapi.ui.main.MainActivityModule
+import com.example.derek.trademeapi.ui.listings.ListingActivity
+import com.example.derek.trademeapi.ui.listings.ListingActivityModule
 import dagger.Binds
 import dagger.Module
 import dagger.android.ContributesAndroidInjector
@@ -24,12 +24,12 @@ abstract class AppModule {
     abstract fun provideApplication(app: App): Application
 
     /**
-     * Provides the injector for the [MainActivity], which has access to the dependencies provided
+     * Provides the injector for the [ListingActivity], which has access to the dependencies provided
      * by this application instance (singleton scoped objects).
      */
     @PerActivity
-    @ContributesAndroidInjector(modules = [MainActivityModule::class])
-    abstract fun mainActivityInjector(): MainActivity
+    @ContributesAndroidInjector(modules = [ListingActivityModule::class])
+    abstract fun mainActivityInjector(): ListingActivity
 
 /*    @Module
     companion object {

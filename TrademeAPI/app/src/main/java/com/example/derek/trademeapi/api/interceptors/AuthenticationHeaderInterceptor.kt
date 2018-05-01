@@ -27,7 +27,7 @@ class AuthenticationHeaderInterceptor : Interceptor {
                 request = original.newBuilder()
                         .header("Authorization",
                                 "OAuth oauth_consumer_key=\"${URLEncoder.encode(BuildConfig.CONSUMER_KEY, "utf-8")}\", " +
-                                        "oauth_signature=\"${URLEncoder.encode(BuildConfig.CONSUMER_SECRET + '&', "utf-8")}\", oauth_signature_method=\"PLAINTEXT\", " +
+                                        "oauth_signature=\"${URLEncoder.encode(BuildConfig.CONSUMER_SECRET, "utf-8")}\", oauth_signature_method=\"PLAINTEXT\", " +
                                         "oauth_version=\"1.0\", oauth_timestamp=\"$timeStamp\"")
                         .method(original.method(), original.body())
                         .build()

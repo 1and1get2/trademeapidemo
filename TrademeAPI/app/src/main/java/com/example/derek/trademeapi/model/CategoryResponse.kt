@@ -8,7 +8,7 @@ open class Category(
         @Json(name = "CanBeSecondCategory") var canBeSecondCategory: Boolean? = null,
         @Json(name = "CanHaveSecondCategory") var canHaveSecondCategory: Boolean? = null,
         @Json(name = "HasClassifieds") var hasClassifieds: Boolean? = null,
-        @Json(name = "IsLeaf") var isLeaf: Boolean? = null,
+        @Json(name = "IsLeaf") var isLeaf: Boolean = false,
         @Json(name = "Name") var name: String? = null,
         @Json(name = "Path") var path: String? = null,
         @Json(name = "Subcategories") var subcategories: List<Category>? = null,

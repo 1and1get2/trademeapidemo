@@ -1,18 +1,13 @@
 package com.example.derek.trademeapi.api
 
-import com.example.derek.trademeapi.BuildConfig
 import com.example.derek.trademeapi.api.moshiadapters.TradeMeDateTime
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.SearchResult
 import io.reactivex.Observable
-import okhttp3.Interceptor
-import okhttp3.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 import trademe.demo.derek.trademedemo.model.ListedItemDetail
-import java.net.URLEncoder
-import java.util.*
 
 interface TradeMeApiService {
     // todo: could be simplified using @QueryMap?
@@ -33,19 +28,16 @@ interface TradeMeApiService {
 
     @GET("Categories/{number}.json")
     fun category(@Path(value = "number", encoded = true) rootCategory: String = "0",
-                 @Query("depth") depth: Int? = null,
-                 @Query("region") page: Int? = null,
-                 @Query("with_counts") withCounts: Boolean? = false): Observable<Category>
+                  @Query("depth") depth: Int? = null,
+                  @Query("region") page: Int? = null,
+                  @Query("with_counts") withCounts: Boolean? = false): Observable<Category>
 
     @GET("Listings/{listingId}.json")
     fun listing(@Path(value = "listingId", encoded = true) listingId: Int
     ): Observable<ListedItemDetail>
 
 
-
-
 }
-
 
 
 enum class TradeMeSearch(val value: String) {
