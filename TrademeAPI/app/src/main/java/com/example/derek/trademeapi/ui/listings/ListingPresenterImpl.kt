@@ -3,7 +3,6 @@ package com.example.derek.trademeapi.ui.listings
 import com.example.derek.trademeapi.api.TradeMeApiService
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
-import com.example.derek.trademeapi.util.checkMainThread
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
@@ -14,6 +13,11 @@ import javax.inject.Inject
 
 /**
  * Created by derek on 1/05/18.
+ *
+ * Using Kotlin, RxJava 2 and Retrofit to consume REST API on Android
+ * https://softwaremill.com/kotlin-rxjava2-retrofit-android/
+ *
+ *
  */
 class ListingPresenterImpl @Inject constructor(override val view: ListingView) : ListingPresenter {
 
@@ -25,14 +29,20 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     private var rootCategory: Category? = null
     private var currentCategory: Category? = null
 
-
+    // TODO: persistent of configuration change
     private val listingList = ArrayList<Listing>(30)
-    private var currentListingIndex = 0 // TODO: persistent of configuration change
+    private var currentListingIndex = 0
 
     private val paginator: PublishProcessor<Int> = PublishProcessor.create()
-    private val paginatorDisposable : Disposable
+    private val paginatorDisposable: Disposable
     private var loading: Boolean = false
     private var currentPage: Int = 0
+    private var totalResultCount : Int = -1 //reached the end of the results
+//    private set
+
+//    override fun getTotalResultCount(): Int {
+//        TODO("not implemented")
+//    }
 
     companion object {
         const val INITIAL_LOAD_PAGES = 2
@@ -42,30 +52,43 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     init {
         Timber.d("ListingsPresenterImpl view set: $view")
         paginatorDisposable = paginator.onBackpressureDrop()
-                .filter { !loading }
+                .doOnNext {
+                    if (loading) {
+                        Timber.e("it is currently loading")
+                    }
+                }
+//                .filter { !loading }
                 .doOnNext {
                     loading = true
                     view.showProgress()
                 }
                 .concatMap {
-                    Timber.d("paginator page: $it, currentPage: $currentPage")
-                    apiService.search(currentCategory?.number, page = currentPage, rows = ITEMS_PER_ROW * it)
+                    Timber.d("searching category no: ${currentCategory?.number} paginator page: $it, currentPage: $currentPage")
+                    apiService.search(
+                            query = null,
+                            category = currentCategory?.number,
+                            page = currentPage,
+                            rows = ITEMS_PER_ROW * it)
                             .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread())
+
                 }
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext {
+                    totalResultCount = it.totalCount
+                    if (totalResultCount <= listingList.size + it.list.size) {
+                        Timber.d("reached the end of the results, total: ${it.totalCount}, current: ${listingList.size + it.list.size}")
+                    }
+                }
                 .subscribe({
-                    Timber.d("paginator is on main thread: ${checkMainThread()}")
                     val currentSize = listingList.size
                     listingList.addAll(it.list)
                     currentPage++
                     loading = false
-                    view.hideProgress()
+                    view.hideProgress(listingList.size, totalResultCount)
                     view.updateListings(listingList, currentSize, listingList.size, ListingView.Notify.INSERT)
                 }, {
-                    Timber.d("paginator is on main thread: ${checkMainThread()}")
                     loading = false
-                    view.hideProgress()
+                    view.hideProgress(listingList.size, totalResultCount)
                     view.showError(it.localizedMessage)
                 })
     }
@@ -73,7 +96,6 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
     override fun onViewCreated() {
         super.onViewCreated()
-        Timber.d(" apiService: $apiService")
 
         onSelectCategory(null) // load all listings
         loadCategories()
@@ -121,7 +143,8 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
             this.currentCategory = currentCategory
             this.currentPage = 0
-            loadMoreListings(INITIAL_LOAD_PAGES)
+            this.totalResultCount = -1
+
 
             val to = listingList.size
             listingList.clear()
@@ -129,15 +152,17 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
             // loading indicator
 
 
+            loadMoreListings(INITIAL_LOAD_PAGES)
         } else {
             Timber.e("onSelectCategory selecting the same category: ${currentCategory?.name}")
         }
     }
 
-    override fun loadMoreListings(count: Int) : Boolean {
+    override fun loadMoreListings(page: Int): Boolean {
         if (loading) return false
-        Timber.d("loadMoreListings: $count")
-        paginator.onNext(count)
+        if (totalResultCount != -1 && totalResultCount <= listingList.size) return false // reached the end of the results
+        Timber.d("loadMoreListings: $page")
+        paginator.onNext(page)
         return true
     }
 

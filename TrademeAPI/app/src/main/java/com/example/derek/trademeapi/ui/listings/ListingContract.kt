@@ -21,7 +21,7 @@ interface ListingView : BaseView<ListingPresenter> {
     fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?, operation: Notify?)
     fun scrollToPosition(position: Int)
     fun showProgress()
-    fun hideProgress()
+    fun hideProgress(currentCount: Int, totalCount: Int)
     fun showError(message: String)
 }
 
@@ -31,10 +31,11 @@ interface ListingPresenter : BasePresenter<ListingView> {
     fun onSelectCategory(currentCategory: Category?)
 
     /** listings */
-    fun loadMoreListings(count: Int = 1) : Boolean // @return more to load
+    fun loadMoreListings(page: Int = 1) : Boolean // @return more to load
 
     fun scrollToTop()
     fun getListingSize(): Int
     fun getListingAtIndex(index: Int): Listing
+//    fun getTotalResultCount(): Int
 //    fun isLoading() : Boolean
 }

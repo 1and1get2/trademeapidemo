@@ -15,8 +15,11 @@ open class Category(
 
         var parent: Category? = null
 ) {
+//    val number get() = _number ?: "Root"
+
+
     override fun toString(): String {
-        return "Category number: $number, Name: $name"//, parent: ${parent?.let { parent[0]?.name }} "
+        return "Category number: ${number ?: "NULL"}, Name: $name, parent: ${parent?.name ?: "NULL"}} "
     }
 }
 

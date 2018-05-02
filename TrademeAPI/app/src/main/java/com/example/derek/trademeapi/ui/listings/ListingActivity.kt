@@ -1,7 +1,6 @@
 package com.example.derek.trademeapi.ui.listings
 
 import android.content.Context
-import android.content.res.Configuration
 import android.databinding.DataBindingUtil
 import android.databinding.ViewDataBinding
 import android.os.Bundle
@@ -18,6 +17,7 @@ import com.example.derek.trademeapi.base.BaseActivity
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
 import com.example.derek.trademeapi.ui.components.GridEndlessRecyclerViewScrollListener
+import com.example.derek.trademeapi.ui.components.TopCategoryNavigationBar
 import com.example.derek.trademeapi.util.GridLayoutColumnQty
 import com.example.derek.trademeapi.util.bindView
 import timber.log.Timber
@@ -27,16 +27,20 @@ import javax.inject.Inject
 /**
  * Created by derek on 30/04/18.
  */
-class ListingActivity : BaseActivity(), ListingView {
+class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     @Inject
     override lateinit var presenter: ListingPresenter
 
     private val toolbar: Toolbar by bindView(R.id.toolbar)
     private val rootCoordinatorLayout: CoordinatorLayout by bindView(R.id.root)
+    private val topCategoryNavigationBar: TopCategoryNavigationBar by bindView(R.id.top_navi_bar)
+
     private val adapter: Adapter by lazy { Adapter(presenter) }
-    private lateinit var gridLayoutManager : GridLayoutManager
-    private lateinit var listingScrollListener : GridEndlessRecyclerViewScrollListener
+
+    private lateinit var gridLayoutManager: GridLayoutManager
+    private lateinit var listingScrollListener: GridEndlessRecyclerViewScrollListener
+
 
     private val listingRecyclerView: RecyclerView by bindView(R.id.recycler_view)
 
@@ -45,28 +49,30 @@ class ListingActivity : BaseActivity(), ListingView {
         setContentView(R.layout.activity_listing)
         setSupportActionBar(toolbar)
 
-        val portrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
         val gridLayoutColumnQty = GridLayoutColumnQty(applicationContext, R.layout.view_listing_item)
-        val column = /*if (portrait) 2 else*/ gridLayoutColumnQty.calculateNoOfColumns()
+        val column = gridLayoutColumnQty.calculateNoOfColumns()
 
-        listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column).also { gridLayoutManager = it}
+        listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column)
+                .also { gridLayoutManager = it }
         listingRecyclerView.adapter = adapter
 
         listingScrollListener = GridEndlessRecyclerViewScrollListener(gridLayoutManager,
-                object : GridEndlessRecyclerViewScrollListener.DataLoader{
+                object : GridEndlessRecyclerViewScrollListener.DataLoader {
                     override fun onLoadMore(): Boolean = presenter.loadMoreListings(1)
                 })
+
         listingRecyclerView.addOnScrollListener(listingScrollListener)
+
+
+        // gridLayoutManager.findFirstCompletelyVisibleItemPosition()
+        topCategoryNavigationBar.setCategorySelectListener(this)
+
         Timber.d("presenter: $presenter")
-        gridLayoutManager.findFirstCompletelyVisibleItemPosition()
     }
 
     override fun onStart() {
         super.onStart()
         presenter.onViewCreated()
-    }
-    override fun onResume() {
-        super.onResume()
     }
 
     override fun onDestroy() {
@@ -76,14 +82,30 @@ class ListingActivity : BaseActivity(), ListingView {
 
     override fun getContext(): Context? = this.applicationContext
 
+    /** CategorySelectListener */
+    override fun onSelectCategory(newCategory: Category) {
+        Timber.d("onSelectCategory setting to: $newCategory")
+        presenter.onSelectCategory(newCategory)
+    }
+
+    /** category */
 
     override fun setCurrentCategory(currentCategory: Category) {
         Timber.d("setCurrentCategory: $currentCategory")
+        topCategoryNavigationBar.setCurrentCategory(currentCategory)
+
+        // TODO: DEBUG ONLY
+        var c = currentCategory
+        while (c.subcategories?.get(0)?.let { c = it } != null) { }
+//        c = Category("0001-0268")
+        topCategoryNavigationBar.postDelayed({
+            topCategoryNavigationBar.setCurrentCategory(c)
+            presenter.onSelectCategory(c)
+        }, 3000L)
     }
 
 
     /** listing */
-
 
 
     override fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?, operation: ListingView.Notify?) {
@@ -116,15 +138,15 @@ class ListingActivity : BaseActivity(), ListingView {
         Timber.d("loading started ....................... ")
     }
 
-    override fun hideProgress() {
-        Timber.d(" ....................... loading stopped")
-        Snackbar.make(rootCoordinatorLayout, "content loading finished, total: ${presenter.getListingSize()}", Snackbar.LENGTH_SHORT).show()
+    override fun hideProgress(currentCount: Int, totalCount: Int) {
+        val message = "content loading finished, $currentCount(current) / $totalCount(total)"
+        Timber.d(" ....................... $message")
+        Snackbar.make(rootCoordinatorLayout, message, Snackbar.LENGTH_SHORT).show()
     }
 
     override fun showError(message: String) {
         Timber.e("loading error: $message")
         Snackbar.make(rootCoordinatorLayout, message, Snackbar.LENGTH_LONG).show()
-
     }
 
     /** recycler view */
@@ -138,11 +160,11 @@ class ListingActivity : BaseActivity(), ListingView {
     }
 
     class Adapter(private val presenter: ListingPresenter) : RecyclerView.Adapter<ItemViewHolder>() {
-//        @Inject lateinit var presenter: ListingPresenter //TODO: why doesn't this work?
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
             val layoutInflater = LayoutInflater.from(parent.context)
-            val binding = DataBindingUtil.inflate<ViewDataBinding>(layoutInflater, R.layout.view_listing_item, parent, false)
+            val binding = DataBindingUtil.inflate<ViewDataBinding>(layoutInflater,
+                    R.layout.view_listing_item, parent, false)
             return ItemViewHolder(binding)
         }
 
@@ -155,6 +177,11 @@ class ListingActivity : BaseActivity(), ListingView {
             holder.bind(listing)
         }
     }
+}
 
-
+/**
+ * for communication between list activity and navigation bar
+ * */
+interface CategorySelectListener {
+    fun onSelectCategory(newCategory: Category)
 }

@@ -28,8 +28,8 @@
 
             <ImageView
                 android:id="@+id/item_image_view"
-                android:layout_width="150dp"
-                android:layout_height="150dp"
+                android:layout_width="@dimen/view_listing_item_image_width"
+                android:layout_height="@dimen/view_listing_item_image_height"
                 android:layout_gravity="top|center_horizontal"
                 android:scaleType="fitXY"
                 android:adjustViewBounds="true"

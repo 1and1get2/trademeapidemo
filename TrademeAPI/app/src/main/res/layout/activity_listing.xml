@@ -24,6 +24,11 @@
             app:layout_scrollFlags="scroll|enterAlways|snap"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             app:title="@string/app_name" />
+
+        <com.example.derek.trademeapi.ui.components.TopCategoryNavigationBar
+            android:id="@+id/top_navi_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
     </android.support.design.widget.AppBarLayout>
 
 

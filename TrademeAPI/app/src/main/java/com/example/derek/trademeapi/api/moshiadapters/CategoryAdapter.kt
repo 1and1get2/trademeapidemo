@@ -3,7 +3,6 @@ package com.example.derek.trademeapi.api.moshiadapters
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.CategoryJson
 import com.squareup.moshi.FromJson
-import timber.log.Timber
 
 /**
  * Created by derek on 2/05/18.
@@ -11,7 +10,7 @@ import timber.log.Timber
 
 class CategoryAdapter {
     @FromJson fun fromJson(categoryJson: CategoryJson) : Category{
-        Timber.d("CategoryAdapter fromJson: $categoryJson")
+//        Timber.d("CategoryAdapter fromJson: $categoryJson")
         val category = Category()
         category.number = categoryJson.Number
         category.canBeSecondCategory = categoryJson.CanBeSecondCategory
