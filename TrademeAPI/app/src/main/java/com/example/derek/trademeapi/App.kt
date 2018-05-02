@@ -14,6 +14,8 @@ import timber.log.Timber.DebugTree
 import javax.inject.Inject
 
 
+
+
 /**
  * Created by derek on 15/10/17.
  */
@@ -73,4 +75,8 @@ class App : Application(), HasActivityInjector {
     }
 
     override fun activityInjector(): AndroidInjector<Activity> = activityInjector
+
+//    TODO: glide dependency issue, conflicts with dagger
+//    @GlideModule
+//    inner class MyAppGlideModule : AppGlideModule()
 }

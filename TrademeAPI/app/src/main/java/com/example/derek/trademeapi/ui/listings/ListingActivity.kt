@@ -5,6 +5,8 @@ import android.content.res.Configuration
 import android.databinding.DataBindingUtil
 import android.databinding.ViewDataBinding
 import android.os.Bundle
+import android.support.design.widget.CoordinatorLayout
+import android.support.design.widget.Snackbar
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.Toolbar
@@ -15,6 +17,7 @@ import com.example.derek.trademeapi.R
 import com.example.derek.trademeapi.base.BaseActivity
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
+import com.example.derek.trademeapi.ui.components.GridEndlessRecyclerViewScrollListener
 import com.example.derek.trademeapi.util.GridLayoutColumnQty
 import com.example.derek.trademeapi.util.bindView
 import timber.log.Timber
@@ -30,7 +33,10 @@ class ListingActivity : BaseActivity(), ListingView {
     override lateinit var presenter: ListingPresenter
 
     private val toolbar: Toolbar by bindView(R.id.toolbar)
+    private val rootCoordinatorLayout: CoordinatorLayout by bindView(R.id.root)
     private val adapter: Adapter by lazy { Adapter(presenter) }
+    private lateinit var gridLayoutManager : GridLayoutManager
+    private lateinit var listingScrollListener : GridEndlessRecyclerViewScrollListener
 
     private val listingRecyclerView: RecyclerView by bindView(R.id.recycler_view)
 
@@ -43,17 +49,15 @@ class ListingActivity : BaseActivity(), ListingView {
         val gridLayoutColumnQty = GridLayoutColumnQty(applicationContext, R.layout.view_listing_item)
         val column = if (portrait) 2 else gridLayoutColumnQty.calculateNoOfColumns()
 
-        listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column)
+        listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column).also { gridLayoutManager = it}
         listingRecyclerView.adapter = adapter
 
-
-        // fake data
-        object : Runnable {
-            override fun run() {
-                presenter.loadMoreListings(2)
-                toolbar.postDelayed(this, 3000)
-            }
-        }.also { it.run() }
+        listingScrollListener = GridEndlessRecyclerViewScrollListener(gridLayoutManager,
+                object : GridEndlessRecyclerViewScrollListener.DataLoader{
+                    override fun onLoadMore(): Boolean = presenter.loadMoreListings(1)
+                })
+        listingRecyclerView.addOnScrollListener(listingScrollListener)
+        Timber.d("presenter: $presenter")
     }
 
     override fun onResume() {
@@ -74,17 +78,53 @@ class ListingActivity : BaseActivity(), ListingView {
     }
 
 
+    /** listing */
+
+
+
+    override fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?, operation: ListingView.Notify?) {
+        Timber.d("updateListings length: ${listings.size} from: $from, to: $to")
+
+        when (operation) {
+            ListingView.Notify.INSERT -> {
+                adapter.notifyItemInserted(from ?: 0)
+            }
+            ListingView.Notify.CLEAR -> {
+                adapter.notifyItemRangeRemoved(0, to ?: listings.size)
+            }
+            ListingView.Notify.UPDATE -> {
+                adapter.notifyItemRangeChanged(from ?: 0, to ?: listings.size)
+            }
+            ListingView.Notify.REMOVE -> {
+                adapter.notifyItemRangeRemoved(from ?: 0, to ?: listings.size)
+            }
+            null -> {
+                adapter.notifyDataSetChanged()
+            }
+        }
+    }
+
     override fun scrollToPosition(position: Int) {
         listingRecyclerView.scrollToPosition(position)
     }
 
-    override fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?) {
-        Timber.d("updateListings length: ${listings.size} from: $from, to: $to")
-        adapter.notifyItemRangeChanged(from ?: 0, to ?: listings.size)
+    override fun showProgress() {
+        Timber.d("loading started ....................... ")
     }
 
+    override fun hideProgress() {
+        Timber.d(" ....................... loading stopped")
+        Snackbar.make(rootCoordinatorLayout, "content loading finished, total: ${presenter.getListingSize()}", Snackbar.LENGTH_SHORT).show()
+    }
 
-    /** listing */
+    override fun showError(message: String) {
+        Timber.e("loading error: $message")
+        Snackbar.make(rootCoordinatorLayout, message, Snackbar.LENGTH_LONG).show()
+
+    }
+
+    /** recycler view */
+
 
     class ItemViewHolder(private val binding: ViewDataBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: Listing) {

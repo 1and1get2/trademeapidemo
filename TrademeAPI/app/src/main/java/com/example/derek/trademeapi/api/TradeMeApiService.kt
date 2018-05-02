@@ -4,7 +4,7 @@ import com.example.derek.trademeapi.api.moshiadapters.TradeMeDateTime
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.ListedItemDetail
 import com.example.derek.trademeapi.model.SearchResult
-import io.reactivex.Observable
+import io.reactivex.Flowable
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -23,18 +23,18 @@ interface TradeMeApiService {
                @Query("rows") rows: Int? = null,
                @Query("return_did_you_mean") returnDidYouMean: Boolean? = true,
                @Query("sort_order") sortOrder: TradeMeEnum.Search.SortOrder? = null
-    ): Observable<SearchResult>
+    ): Flowable<SearchResult>
 
 
     @GET("Categories/{number}.json")
     fun category(@Path(value = "number", encoded = true) rootCategory: String = "0",
                   @Query("depth") depth: Int? = null,
                   @Query("region") page: Int? = null,
-                  @Query("with_counts") withCounts: Boolean? = false): Observable<Category>
+                  @Query("with_counts") withCounts: Boolean? = false): Flowable<Category>
 
     @GET("Listings/{listingId}.json")
     fun listing(@Path(value = "listingId", encoded = true) listingId: Int
-    ): Observable<ListedItemDetail>
+    ): Flowable<ListedItemDetail>
 
 
 }

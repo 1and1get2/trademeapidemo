@@ -31,22 +31,23 @@
                 android:layout_width="150dp"
                 android:layout_height="150dp"
                 android:scaleType="fitXY"
-                app:imageUrl="@{listing.pictureHref}"/>
+                app:imageUrl="@{listing.pictureHref}" />
 
             <TextView
                 android:id="@+id/item_id_text_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="30dp"
-                android:layout_marginEnd="30dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
                 android:text="@{Integer.toString(listing.listingId)}" />
 
             <TextView
                 android:id="@+id/item_title_text_view"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="30dp"
-                android:layout_marginEnd="30dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:singleLine="false"
                 android:text="@{listing.title}" />
 
         </LinearLayout>

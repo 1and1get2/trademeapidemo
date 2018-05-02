@@ -3,9 +3,11 @@ package com.example.derek.trademeapi.ui.listings
 import com.example.derek.trademeapi.api.TradeMeApiService
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
-import io.reactivex.Observable
+import com.example.derek.trademeapi.util.checkMainThread
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import javax.inject.Inject
@@ -15,55 +17,92 @@ import javax.inject.Inject
  */
 class ListingPresenterImpl @Inject constructor(override val view: ListingView) : ListingPresenter {
 
-
     private val compositeDisposable: CompositeDisposable by lazy { CompositeDisposable() }
 
 
-    @Inject lateinit var apiService: TradeMeApiService
+    @Inject
+    lateinit var apiService: TradeMeApiService
     private lateinit var rootCategory: Category
-    private lateinit var currentCategory: Category
+    private var currentCategory: Category? = null
 
 
     private val listingList = ArrayList<Listing>(30)
     private var currentListingIndex = 0 // TODO: persistent of configuration change
 
+    private val paginator: PublishProcessor<Int> = PublishProcessor.create()
+    private val paginatorDisposable : Disposable
+    private var loading: Boolean = false
+    private var currentPage: Int = 0
+
+    companion object {
+        const val INITIAL_LOAD_PAGES = 2
+        const val ITEMS_PER_ROW = 20
+    }
+
     init {
         Timber.d("ListingsPresenterImpl view set: $view")
+        paginatorDisposable = paginator.onBackpressureDrop()
+                .filter { !loading }
+                .doOnNext {
+                    loading = true
+                    view.showProgress()
+                }
+                .concatMap {
+                    Timber.d("paginator page: $it, currentPage: $currentPage")
+                    apiService.search(currentCategory?.number, page = currentPage, rows = ITEMS_PER_ROW * it)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    Timber.d("paginator is on main thread: ${checkMainThread()}")
+                    loading = false
+                    view.hideProgress()
+                    val currentSize = listingList.size
+                    listingList.addAll(it.list)
+                    currentPage++
+                    view.updateListings(listingList, currentSize, listingList.size, ListingView.Notify.INSERT)
+                }, {
+                    Timber.d("paginator is on main thread: ${checkMainThread()}")
+                    loading = false
+                    view.hideProgress()
+                    view.showError(it.localizedMessage)
+                })
     }
 
 
     override fun onViewCreated() {
         super.onViewCreated()
         Timber.d(" apiService: $apiService")
-        loadCategories()
 
+        onSelectCategory(null) // load all listings
+        loadCategories()
     }
 
     override fun onViewDestroyed() {
         super.onViewDestroyed()
         compositeDisposable.clear()
+        paginatorDisposable.dispose()
     }
 
-    override fun loadCategories() {
-        apiService.category("0") // initial depth
+    /** load all categories */
+    private fun loadCategories(category: Category? = null) {
+
+        apiService.category(category?.number ?: "0") // initial depth
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext {
                     rootCategory = it
-                    onSelectCategory(it)
+//                    onSelectCategory(it)
                     Timber.d("rootCategory set: $rootCategory")
                 }
                 .doOnNext {
-                    onSelectCategory(it)
                     view.setCurrentCategory(it)
                 }
                 .subscribe()
+                .also { compositeDisposable.add(it) }
     }
 
-    override fun onSelectCategory(currentCategory: Category) {
-        this.currentCategory = currentCategory
-        loadMoreListings(2)
-    }
 
     /** listings */
 
@@ -72,24 +111,39 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
         view.scrollToPosition(0)
     }
 
-    override fun loadMoreListings(count: Int?) {
-        Timber.d("loadMoreListings: $count")
-        val currentSize = listingList.size
+    /**
+     * updates listings
+     * if category = null then load all listings
+     * */
+    override fun onSelectCategory(currentCategory: Category?) {
+        if (this.currentCategory == null || this.currentCategory != currentCategory) {
+            if (this.currentCategory != null) compositeDisposable.clear()
 
-        for (i in 1..(count ?: 10)) {
-            val listing = Listing(i, "title: $i",
-                    pictureHref = "https://images.tmsandbox.co.nz/photoserver/thumb/893921.jpg",
-                    category = "fake category", startPrice = 0.5f + i
-            )
-            listingList.add(listing)
+            this.currentCategory = currentCategory
+            this.currentPage = 0
+            loadMoreListings(INITIAL_LOAD_PAGES)
+
+            val to = listingList.size
+            listingList.clear()
+            view.updateListings(listingList, 0, listingList.size, ListingView.Notify.CLEAR)
+            // loading indicator
+
+
+        } else {
+            Timber.e("onSelectCategory selecting the same category: ${currentCategory?.name}")
         }
+    }
 
-        view.updateListings(listingList, currentSize, listingList.size)
+    override fun loadMoreListings(count: Int) : Boolean {
+        if (loading) return false
+        Timber.d("loadMoreListings: $count")
+        paginator.onNext(count)
+        return true
     }
 
     override fun getListingSize(): Int = listingList.size
 
-    override fun getListingAtIndex(index : Int): Listing = listingList[index]
+    override fun getListingAtIndex(index: Int): Listing = listingList[index]
 
     /** methods that not currently in use */
 
@@ -98,7 +152,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     // https://stackoverflow.com/questions/28176072/in-rxjava-how-to-pass-a-variable-along-when-chaining-observables
     // https://stackoverflow.com/questions/31246088/how-to-do-recursive-observable-call-in-rxjava
     // https://medium.com/@stevenlow1983/rx-java-and-recursion-719f8ee1977a
-    fun preFetchCategory(parent: Category): Observable<Category> {
+/*    fun preFetchCategory(parent: Category): Observable<Category> {
         return when {
             parent.isLeaf -> {
                 Observable.just(parent)
@@ -114,5 +168,5 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                 }.flatMap { preFetchCategory(it) }
             }
         }
-    }
+    }*/
 }
