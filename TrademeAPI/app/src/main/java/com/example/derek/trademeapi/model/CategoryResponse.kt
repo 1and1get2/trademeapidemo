@@ -13,11 +13,21 @@ open class Category(
         @Json(name = "Path") var path: String? = null,
         @Json(name = "Subcategories") var subcategories: List<Category>? = null,
 
-        val parent: List<Category>? = null, // for automatic linking
-        var parentInMemory: Category? = null
+        var parent: Category? = null
 ) {
     override fun toString(): String {
         return "Category number: $number, Name: $name"//, parent: ${parent?.let { parent[0]?.name }} "
     }
 }
 
+
+data class CategoryJson(
+        val Number: String? = null,
+        var CanBeSecondCategory: Boolean? = null,
+        var CanHaveSecondCategory: Boolean? = null,
+        var HasClassifieds: Boolean? = null,
+        var IsLeaf: Boolean = false,
+        var Name: String? = null,
+        var Path: String? = null,
+        var Subcategories: List<Category>? = null
+)

@@ -22,7 +22,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
     @Inject
     lateinit var apiService: TradeMeApiService
-    private lateinit var rootCategory: Category
+    private var rootCategory: Category? = null
     private var currentCategory: Category? = null
 
 
@@ -87,20 +87,20 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
     /** load all categories */
     private fun loadCategories(category: Category? = null) {
-
-        apiService.category(category?.number ?: "0") // initial depth
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext {
-                    rootCategory = it
-//                    onSelectCategory(it)
-                    Timber.d("rootCategory set: $rootCategory")
-                }
-                .doOnNext {
-                    view.setCurrentCategory(it)
-                }
-                .subscribe()
-                .also { compositeDisposable.add(it) }
+        if (rootCategory == null) {
+            apiService.category(category?.number ?: "0") // initial depth
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        rootCategory = it
+                        Timber.d("rootCategory set: $rootCategory")
+                    }
+                    .doOnNext {
+                        view.setCurrentCategory(it)
+                    }
+                    .subscribe()
+                    .also { compositeDisposable.add(it) }
+        }
     }
 
 
@@ -125,7 +125,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
             val to = listingList.size
             listingList.clear()
-            view.updateListings(listingList, 0, listingList.size, ListingView.Notify.CLEAR)
+            view.updateListings(listingList, 0, to, ListingView.Notify.CLEAR)
             // loading indicator
 
 

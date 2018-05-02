@@ -2,6 +2,7 @@ package com.example.derek.trademeapi.api
 
 import com.example.derek.trademeapi.BuildConfig
 import com.example.derek.trademeapi.api.interceptors.AuthenticationHeaderInterceptor
+import com.example.derek.trademeapi.api.moshiadapters.CategoryAdapter
 import com.example.derek.trademeapi.api.moshiadapters.TradeMeDateJsonAdapter
 import com.example.derek.trademeapi.api.moshiadapters.TradeMeDateTime
 import com.squareup.moshi.KotlinJsonAdapterFactory
@@ -44,6 +45,8 @@ abstract class NetModule {
         @Singleton
         fun provideMoshi(): Moshi =
                 Moshi.Builder()
+                        .add(CategoryAdapter())
+//                        .add(Category::class.java, CategoryAdapter())
 //                    .add(RealmListAdapter.FACTORY)
                         .add(TradeMeDateTime::class.java, TradeMeDateJsonAdapter())
                         .add(KotlinJsonAdapterFactory())
