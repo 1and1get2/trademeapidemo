@@ -56,11 +56,11 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     Timber.d("paginator is on main thread: ${checkMainThread()}")
-                    loading = false
-                    view.hideProgress()
                     val currentSize = listingList.size
                     listingList.addAll(it.list)
                     currentPage++
+                    loading = false
+                    view.hideProgress()
                     view.updateListings(listingList, currentSize, listingList.size, ListingView.Notify.INSERT)
                 }, {
                     Timber.d("paginator is on main thread: ${checkMainThread()}")

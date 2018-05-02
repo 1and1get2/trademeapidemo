@@ -47,7 +47,7 @@ class ListingActivity : BaseActivity(), ListingView {
 
         val portrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
         val gridLayoutColumnQty = GridLayoutColumnQty(applicationContext, R.layout.view_listing_item)
-        val column = if (portrait) 2 else gridLayoutColumnQty.calculateNoOfColumns()
+        val column = /*if (portrait) 2 else*/ gridLayoutColumnQty.calculateNoOfColumns()
 
         listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column).also { gridLayoutManager = it}
         listingRecyclerView.adapter = adapter
@@ -58,11 +58,15 @@ class ListingActivity : BaseActivity(), ListingView {
                 })
         listingRecyclerView.addOnScrollListener(listingScrollListener)
         Timber.d("presenter: $presenter")
+        gridLayoutManager.findFirstCompletelyVisibleItemPosition()
     }
 
+    override fun onStart() {
+        super.onStart()
+        presenter.onViewCreated()
+    }
     override fun onResume() {
         super.onResume()
-        presenter.onViewCreated()
     }
 
     override fun onDestroy() {
@@ -145,7 +149,6 @@ class ListingActivity : BaseActivity(), ListingView {
         override fun getItemCount(): Int {
             return presenter.getListingSize()
         }
-//        override fun getItemCount(): Int = presenter.getListingSize()
 
         override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
             val listing = presenter.getListingAtIndex(position)

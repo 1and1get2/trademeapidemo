@@ -30,7 +30,9 @@
                 android:id="@+id/item_image_view"
                 android:layout_width="150dp"
                 android:layout_height="150dp"
+                android:layout_gravity="top|center_horizontal"
                 android:scaleType="fitXY"
+                android:adjustViewBounds="true"
                 app:imageUrl="@{listing.pictureHref}" />
 
             <TextView
@@ -38,6 +40,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
+                android:layout_marginTop="10dp"
                 android:layout_marginEnd="10dp"
                 android:text="@{Integer.toString(listing.listingId)}" />
 
@@ -46,6 +49,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
+                android:layout_marginTop="5dp"
                 android:layout_marginEnd="10dp"
                 android:singleLine="false"
                 android:text="@{listing.title}" />

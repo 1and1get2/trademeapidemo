@@ -8,9 +8,9 @@
 
 
 # crashes
-1. only happened once, not able to reproduce
+1. ~~only happened once, not able to reproduce~~ fixed
 ```
-2018-05-02 17:41:21.498 22561-22561/com.example.derek.trademeapi E/AndroidRuntime: FATAL EXCEPTION: main
+~~2018-05-02 17:41:21.498 22561-22561/com.example.derek.trademeapi E/AndroidRuntime: FATAL EXCEPTION: main
     Process: com.example.derek.trademeapi, PID: 22561
     java.lang.IndexOutOfBoundsException: Inconsistency detected. Invalid view holder adapter positionViewHolder{32d7261 position=171 id=-1, oldPos=170, pLpos:170 scrap [attachedScrap] tmpDetached no parent} android.support.v7.widget.RecyclerView{5e0d493 VFED..... .F....I. 0,0-1080,1863 #7f080086 app:id/recycler_view}, adapter:com.example.derek.trademeapi.ui.listings.ListingActivity$Adapter@9c6c16b, layout:android.support.v7.widget.GridLayoutManager@c5124c8, context:com.example.derek.trademeapi.ui.listings.ListingActivity@bcf1ddb
         at android.support.v7.widget.RecyclerView$Recycler.validateViewHolderForOffsetPosition(RecyclerView.java:5610)
@@ -71,6 +71,8 @@
         at java.lang.reflect.Method.invoke(Native Method)
         at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:442)
         at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:807)
-        at de.robv.android.xposed.XposedBridge.main(XposedBridge.java:108)
+        at de.robv.android.xposed.XposedBridge.main(XposedBridge.java:108)~~
 ```
+
+2. .
 

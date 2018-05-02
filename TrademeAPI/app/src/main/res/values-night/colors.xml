@@ -1,2 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+
+    <color name="textColorPrimary">#d2d2d2</color>
+    <color name="textColorSecondary">#787878</color>
+    <color name="background">#212121</color>
+
+    <color name="actionMenuTextColor">@color/textColorPrimary</color>
+</resources>
