@@ -23,6 +23,9 @@ interface ListingView : BaseView<ListingPresenter> {
     fun showProgress()
     fun hideProgress(currentCount: Int, totalCount: Int)
     fun showError(message: String)
+
+    /** search */
+    fun updateSearchSuggestion(suggestions: List<String>)
 }
 
 
@@ -32,10 +35,11 @@ interface ListingPresenter : BasePresenter<ListingView> {
 
     /** listings */
     fun loadMoreListings(page: Int = 1) : Boolean // @return more to load
-
     fun scrollToTop()
     fun getListingSize(): Int
     fun getListingAtIndex(index: Int): Listing
-//    fun getTotalResultCount(): Int
-//    fun isLoading() : Boolean
+
+    /** search */
+    fun onQueryTextChange(newText: String?)
+    fun onQueryTextSubmit(query: String?)
 }

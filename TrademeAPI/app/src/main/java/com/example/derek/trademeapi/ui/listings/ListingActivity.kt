@@ -15,7 +15,6 @@ import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
-import android.widget.ListView
 import android.widget.TextView
 import com.example.derek.trademeapi.BR
 import com.example.derek.trademeapi.R
@@ -34,7 +33,7 @@ import javax.inject.Inject
 /**
  * Created by derek on 30/04/18.
  */
-class ListingActivity : BaseActivity(), ListingView, CategorySelectListener, SearchView.OnQueryTextListener {
+class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     @Inject
     override lateinit var presenter: ListingPresenter
@@ -43,10 +42,11 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener, Sea
     private val rootCoordinatorLayout: CoordinatorLayout by bindView(R.id.root)
     private val topCategoryNavigationBar: TopCategoryNavigationBar by bindView(R.id.top_navi_bar)
     private val topCategorySelector: TopCategorySelector by bindView(R.id.top_navi_bar_selector)
-    private val searchListView: ListView by bindView(R.id.list_item)
+//    private val searchListView: ListView by bindView(R.id.list_item)
     private var searchView: SearchView? = null
 
-    private val adapter: Adapter by lazy { Adapter(presenter) }
+    private val listAdapter: Adapter by lazy { Adapter(presenter) }
+    private val searchAdapter: SearchListAdapter by lazy { SearchListAdapter() }
 
     private lateinit var layoutManager: GridLayoutManager
     private lateinit var listingScrollListener: RecyclerView.OnScrollListener
@@ -61,7 +61,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener, Sea
 
         val gridLayoutColumnQty = GridLayoutColumnQty(applicationContext, R.layout.view_listing_item)
         val column = gridLayoutColumnQty.calculateNoOfColumns()
-        listingRecyclerView.adapter = adapter
+        listingRecyclerView.adapter = listAdapter
 
         listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column)
                 .also { layoutManager = it }
@@ -72,6 +72,8 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener, Sea
                 })
 
         listingRecyclerView.addOnScrollListener(listingScrollListener)
+
+
 
 
         // gridLayoutManager.findFirstCompletelyVisibleItemPosition()
@@ -96,20 +98,36 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener, Sea
         menuInflater.inflate( R.menu.activity_listing, menu)
         menu?.also {
             val searchActionMenuItem = menu.findItem(R.id.action_search)
+//            searchListView.adapter = searchAdapter
             searchView = searchActionMenuItem.actionView as? SearchView
-            searchView?.setOnQueryTextListener(this)
+            searchView?.also { searchView->
+                searchView.setQueryHint("Search People")
+                searchView.setIconified(false);
+                searchView.setOnQueryTextListener(searchAdapter)
+                searchView.setOnCloseListener(searchAdapter)
+            }
+
+//            searchView?.setOnSuggestionListener(searchAdapter)
+//            searchActionMenuItem.collapseActionView()
         }
 
         return true
     }
 
     /** search */
-    override fun onQueryTextSubmit(query: String?): Boolean {
-        Timber.d("onQueryTextSubmit: $query")
-        return false
+    override fun updateSearchSuggestion(suggestions: List<String>) {
+        searchAdapter.updateSearchSuggestion(suggestions)
     }
 
-    class SearchListAdapter : BaseAdapter() {
+    class SearchListAdapter : BaseAdapter(), SearchView.OnQueryTextListener, SearchView.OnCloseListener {
+        private var suggestions : List<String>? = null
+
+        /** data */
+        fun updateSearchSuggestion(suggestions: List<String>) {
+            this.suggestions = suggestions
+            notifyDataSetChanged()
+        }
+        /** ListView */
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             var v = convertView as? TextView ?: TextView(parent.context)
             return v
@@ -126,12 +144,26 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener, Sea
         override fun getCount(): Int {
             TODO("not implemented")
         }
+
+        /** SearchView.OnQueryTextListener */
+        override fun onQueryTextSubmit(query: String?): Boolean {
+            Timber.d("onQueryTextSubmit: $query")
+            return false
+        }
+
+        override fun onQueryTextChange(newText: String?): Boolean {
+            Timber.d("onQueryTextChange: $newText")
+            return true
+        }
+
+        /** SearchView.OnCloseListener */
+        override fun onClose(): Boolean {
+//            suggestions.clear()
+            return false
+        }
     }
 
-    override fun onQueryTextChange(newText: String?): Boolean {
-        Timber.d("onQueryTextChange: $newText")
-        return true
-    }
+
 
     /** CategorySelectListener */
     override fun onSelectCategory(newCategory: Category) {
@@ -158,19 +190,19 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener, Sea
 
         when (operation) {
             ListingView.Notify.INSERT -> {
-                adapter.notifyItemInserted(from ?: 0)
+                listAdapter.notifyItemInserted(from ?: 0)
             }
             ListingView.Notify.CLEAR -> {
-                adapter.notifyItemRangeRemoved(0, to ?: listings.size)
+                listAdapter.notifyItemRangeRemoved(0, to ?: listings.size)
             }
             ListingView.Notify.UPDATE -> {
-                adapter.notifyItemRangeChanged(from ?: 0, to ?: listings.size)
+                listAdapter.notifyItemRangeChanged(from ?: 0, to ?: listings.size)
             }
             ListingView.Notify.REMOVE -> {
-                adapter.notifyItemRangeRemoved(from ?: 0, to ?: listings.size)
+                listAdapter.notifyItemRangeRemoved(from ?: 0, to ?: listings.size)
             }
             null -> {
-                adapter.notifyDataSetChanged()
+                listAdapter.notifyDataSetChanged()
             }
         }
     }

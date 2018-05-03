@@ -11,6 +11,7 @@ import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.Schedulers
 import org.reactivestreams.Subscription
 import timber.log.Timber
+import java.util.*
 import javax.inject.Inject
 
 /**
@@ -42,8 +43,11 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     private var loading: Boolean = false
     private var currentPage: Int = 0 // page number starts at 1
     private var totalResultCount : Int = -1 //reached the end of the results
-
     private var paginationSubscription : Subscription? = null
+
+
+    private val searchPublishProcessor: PublishProcessor<String> = PublishProcessor.create()
+
 
     private var tabLastTabTime : Long = 0
 
@@ -78,7 +82,8 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                             .filter {newPage ->
                                 (totalResultCount == -1 || totalResultCount >= (newPage - 1) * ITEMS_PER_ROW)
                             }
-                            .concatMap { apiService.search(
+                            .concatMap {
+                                apiService.search(
                                     query = null,
                                     category = currentCategory?.number,
                                     page = it,
@@ -107,7 +112,70 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                     loading = false
                     view.hideProgress(listingList.size, totalResultCount)
                     view.showError(it.localizedMessage)
-                })
+                }).also {
+                    compositeDisposable.add(it)
+                }
+
+        searchPublishProcessor.onBackpressureDrop()
+/*                .concatMap {
+                    apiService.suggestions(
+                            categoryId = currentCategory?.number?.toIntOrNull(),
+                            searchString = if (it.isEmpty()) null else it )
+                            .subscribeOn(Schedulers.io()) }*/
+
+                .concatMap {
+                    apiService.suggestions(
+                            categoryId = 0,
+                            searchString = "iphone" )
+                            .subscribeOn(Schedulers.io()) }
+
+
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+//                    view.updateSearchSuggestion(it.toList())
+                    val list = it.categorySuggestions?.map { it.name }?.toList()
+                    Timber.d("searchPublishProcessor list: $list")
+
+                }, {
+                    view.showError(it.localizedMessage)
+                }).also {
+                    compositeDisposable.add(it)
+                }
+
+
+
+/*        searchPublishProcessor.onBackpressureDrop()
+                .concatMap {
+                    apiService.suggestions(
+                            categoryId = currentCategory?.number?.toIntOrNull(),
+                            searchString = if (it.isEmpty()) null else it )
+                            .subscribeOn(Schedulers.io()) }
+                .observeOn(AndroidSchedulers.mainThread())
+//                .concatMap { Flowable.fromArray(it.categorySuggestions) }
+                .flatMap {
+                    Flowable.just(it.categorySuggestions.asOptional())
+                }
+                .flatMap {
+                    if (it.isPresent) {
+                        Flowable.fromIterable(it.value as List<CategorySuggestion>)
+                    } else {
+                        Flowable.just(None)
+                    }
+                }
+                .flatMap { it }
+                .flatMapIterable { it.categorySuggestions }
+                .concatMap { Flowable.just(it.name) }
+                .toList()
+                .subscribe({
+                    view.updateSearchSuggestion(it.toList())
+                }, {
+                    view.showError(it.localizedMessage)
+                })*/
+
+//                .subscribe { view.updateListings(it.categorySuggestions?) }
+
+
+
     }
 
     override fun onViewCreated() {
@@ -115,6 +183,8 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
         onSelectCategory(null) // load all listings
         loadCategories()
+
+        searchPublishProcessor.onNext("hi")
     }
 
     override fun onViewDestroyed() {
@@ -155,7 +225,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
      * */
     override fun onSelectCategory(currentCategory: Category?) {
         if (this.currentCategory == null || this.currentCategory != currentCategory) {
-            if (this.currentCategory != null) compositeDisposable.clear()
+//            if (this.currentCategory != null) compositeDisposable.clear()
 
             this.currentCategory = currentCategory
             this.currentPage = 0
@@ -194,41 +264,14 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     override fun getListingAtIndex(index: Int): Listing = listingList[index]
 
 
+    /** search */
+    override fun onQueryTextChange(newText: String?) {
+        TODO("not implemented")
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    override fun onQueryTextSubmit(query: String?) {
+        TODO("not implemented")
+    }
     /** methods that not currently in use */
 
     /** load more category on demand */
