@@ -59,3 +59,24 @@ data class AdditionalData(
 data class Tag(
         @Json(name = "Name") val name: String
 )
+
+
+data class CategorySuggestion(
+        @Json(name = "Id")
+        var id: Int? = null,
+        @Json(name = "Name")
+        var name: String? = null,
+        @Json(name = "AncestorsNames")
+        var ancestorsNames: List<String>? = null
+)
+
+data class SearchSuggestionsResponse(
+        @Json(name = "RecentSearches")
+        var recentSearches: List<Any>? = null,
+        @Json(name = "AutoSuggestions")
+        var autoSuggestions: List<Any>? = null,
+        @Json(name = "CategorySuggestions")
+        var categorySuggestions: List<CategorySuggestion>? = null,
+        @Json(name = "StoreSuggestions")
+        var storeSuggestions: List<Any>? = null
+)

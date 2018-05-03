@@ -72,8 +72,7 @@ class TopCategorySelector @JvmOverloads constructor(
                     it.gravity = Gravity.CENTER
                 })
 
-        override fun getItemCount(): Int = (currentCategory?.subcategories?.size
-                ?: 0).also { Timber.d("getItemCount: $it") }
+        override fun getItemCount(): Int = (currentCategory?.subcategories?.size ?: 0)
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             (holder.itemView as? TextView)?.also {

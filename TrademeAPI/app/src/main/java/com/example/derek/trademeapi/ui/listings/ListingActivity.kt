@@ -8,9 +8,15 @@ import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.Snackbar
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.SearchView
 import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.View
 import android.view.ViewGroup
+import android.widget.BaseAdapter
+import android.widget.ListView
+import android.widget.TextView
 import com.example.derek.trademeapi.BR
 import com.example.derek.trademeapi.R
 import com.example.derek.trademeapi.base.BaseActivity
@@ -28,7 +34,7 @@ import javax.inject.Inject
 /**
  * Created by derek on 30/04/18.
  */
-class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
+class ListingActivity : BaseActivity(), ListingView, CategorySelectListener, SearchView.OnQueryTextListener {
 
     @Inject
     override lateinit var presenter: ListingPresenter
@@ -37,6 +43,8 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     private val rootCoordinatorLayout: CoordinatorLayout by bindView(R.id.root)
     private val topCategoryNavigationBar: TopCategoryNavigationBar by bindView(R.id.top_navi_bar)
     private val topCategorySelector: TopCategorySelector by bindView(R.id.top_navi_bar_selector)
+    private val searchListView: ListView by bindView(R.id.list_item)
+    private var searchView: SearchView? = null
 
     private val adapter: Adapter by lazy { Adapter(presenter) }
 
@@ -84,6 +92,47 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     override fun getContext(): Context? = this.applicationContext
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate( R.menu.activity_listing, menu)
+        menu?.also {
+            val searchActionMenuItem = menu.findItem(R.id.action_search)
+            searchView = searchActionMenuItem.actionView as? SearchView
+            searchView?.setOnQueryTextListener(this)
+        }
+
+        return true
+    }
+
+    /** search */
+    override fun onQueryTextSubmit(query: String?): Boolean {
+        Timber.d("onQueryTextSubmit: $query")
+        return false
+    }
+
+    class SearchListAdapter : BaseAdapter() {
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            var v = convertView as? TextView ?: TextView(parent.context)
+            return v
+        }
+
+        override fun getItem(position: Int): Any {
+            TODO("not implemented")
+        }
+
+        override fun getItemId(position: Int): Long {
+            TODO("not implemented")
+        }
+
+        override fun getCount(): Int {
+            TODO("not implemented")
+        }
+    }
+
+    override fun onQueryTextChange(newText: String?): Boolean {
+        Timber.d("onQueryTextChange: $newText")
+        return true
+    }
+
     /** CategorySelectListener */
     override fun onSelectCategory(newCategory: Category) {
         presenter.onSelectCategory(newCategory)
@@ -103,7 +152,6 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
 
     /** listing */
-
 
     override fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?, operation: ListingView.Notify?) {
 //        Timber.d("updateListings length: ${listings.size} from: $from, to: $to")
@@ -177,7 +225,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 }
 
 /**
- * for communication between list activity and navigation bar
+ * for communications between list activity and navigation bar
  * */
 interface CategorySelectListener {
     fun onSelectCategory(newCategory: Category)

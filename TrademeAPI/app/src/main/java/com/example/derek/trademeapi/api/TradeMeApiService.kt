@@ -4,6 +4,7 @@ import com.example.derek.trademeapi.api.moshiadapters.TradeMeDateTime
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.ListedItemDetail
 import com.example.derek.trademeapi.model.SearchResult
+import com.example.derek.trademeapi.model.SearchSuggestionsResponse
 import io.reactivex.Flowable
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -35,6 +36,17 @@ interface TradeMeApiService {
     @GET("Listings/{listingId}.json")
     fun listing(@Path(value = "listingId", encoded = true) listingId: Int
     ): Flowable<ListedItemDetail>
+
+
+    @GET("Search/Suggestions.json")
+    fun suggestions(
+            @Query("category_id") categoryId: Int? = null,
+            @Query("max_auto_suggestions") maxAutoSuggestions: Int? = null,
+            @Query("max_category_suggestions") maxCategorySuggestions: Int? = null,
+            @Query("max_recent_searches") maxRecentSearches: Int? = null,
+            @Query("max_total_suggestions") maxTotalSuggestions: Int? = null,
+            @Query("search_string") searchString: String? = null
+    ): Flowable<SearchSuggestionsResponse>
 
 
 }

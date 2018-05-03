@@ -1,8 +1,8 @@
 <resources>
 
     <style name="Base" parent="BaseDayNightTheme" >
-        <item name="actionMenuTextColor">@color/actionMenuTextColor</item>
-        <item name="colorControlNormal">#FF0000</item>
+        <!--<item name="actionMenuTextColor">@color/actionMenuTextColor</item>-->
+        <!--<item name="colorControlNormal">#FF0000</item>-->
     </style>
 
 
