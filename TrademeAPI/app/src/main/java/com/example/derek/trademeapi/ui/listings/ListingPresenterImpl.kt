@@ -45,9 +45,12 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
     private var paginationSubscription : Subscription? = null
 
+    private var tabLastTabTime : Long = 0
+
     companion object {
         const val INITIAL_LOAD_PAGES = 2
         const val ITEMS_PER_ROW = 40
+        const val SCROLL_TO_TOP_DELAY_MS = 500
     }
 
     init {
@@ -89,7 +92,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                                     }
                                     .subscribeOn(Schedulers.io())
                                     .doOnCancel {
-                                        Timber.d("trying to cancel apiService.search")
+                                        Timber.d("canceling old apiService.search request")
                                     } }
 
                             // update current page number from the backend
@@ -165,12 +168,17 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
             val to = listingList.size
             listingList.clear()
             view.updateListings(listingList, 0, to, ListingView.Notify.CLEAR)
-            // loading indicator
+            // loading indicator (can't be bothered)
 
 
             loadMoreListings(INITIAL_LOAD_PAGES)
         } else {
-            Timber.e("onSelectCategory selecting the same category: ${currentCategory?.name}")
+            Timber.d("onSelectCategory selecting the same category: ${currentCategory?.name}")
+            val currentTime = System.currentTimeMillis()
+            tabLastTabTime = when {
+                currentTime - tabLastTabTime < SCROLL_TO_TOP_DELAY_MS -> { scrollToTop(); 0 }
+                else -> { currentTime }
+            }
         }
     }
 

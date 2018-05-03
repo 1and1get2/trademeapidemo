@@ -75,5 +75,5 @@
 ```
 
 2. race condition when new request are fired before last one was cancelled (paginatorDisposable for category)
-3. duplicated results when reaching the end of the list (listings)
+3. ~~duplicated results when reaching the end of the list (listings)~~ fixed @[#0cdadfd]
 
