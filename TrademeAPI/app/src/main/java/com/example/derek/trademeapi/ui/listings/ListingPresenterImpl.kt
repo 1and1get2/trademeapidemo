@@ -3,16 +3,20 @@ package com.example.derek.trademeapi.ui.listings
 import com.example.derek.trademeapi.api.TradeMeApiService
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
+import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.Schedulers
+import org.reactivestreams.Subscription
 import timber.log.Timber
 import javax.inject.Inject
 
 /**
  * Created by derek on 1/05/18.
+ *
+ * TODO: persistent on configuration change
  *
  * Using Kotlin, RxJava 2 and Retrofit to consume REST API on Android
  * https://softwaremill.com/kotlin-rxjava2-retrofit-android/
@@ -24,37 +28,35 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     private val compositeDisposable: CompositeDisposable by lazy { CompositeDisposable() }
 
 
-    @Inject
-    lateinit var apiService: TradeMeApiService
+    @Inject lateinit var apiService: TradeMeApiService
+
+
     private var rootCategory: Category? = null
     private var currentCategory: Category? = null
 
-    // TODO: persistent of configuration change
     private val listingList = ArrayList<Listing>(30)
     private var currentListingIndex = 0
 
     private val paginator: PublishProcessor<Int> = PublishProcessor.create()
     private val paginatorDisposable: Disposable
     private var loading: Boolean = false
-    private var currentPage: Int = 0
+    private var currentPage: Int = 0 // page number starts at 1
     private var totalResultCount : Int = -1 //reached the end of the results
-//    private set
 
-//    override fun getTotalResultCount(): Int {
-//        TODO("not implemented")
-//    }
+    private var paginationSubscription : Subscription? = null
 
     companion object {
         const val INITIAL_LOAD_PAGES = 2
-        const val ITEMS_PER_ROW = 20
+        const val ITEMS_PER_ROW = 40
     }
 
     init {
-        Timber.d("ListingsPresenterImpl view set: $view")
         paginatorDisposable = paginator.onBackpressureDrop()
                 .doOnNext {
+                    Timber.d("it is currently loading: $loading, paginationSubscription: $paginationSubscription")
                     if (loading) {
-                        Timber.e("it is currently loading")
+                        paginationSubscription?.cancel()
+                        loading = false
                     }
                 }
 //                .filter { !loading }
@@ -63,26 +65,41 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                     view.showProgress()
                 }
                 .concatMap {
-                    Timber.d("searching category no: ${currentCategory?.number} paginator page: $it, currentPage: $currentPage")
-                    apiService.search(
-                            query = null,
-                            category = currentCategory?.number,
-                            page = currentPage,
-                            rows = ITEMS_PER_ROW * it)
-                            .subscribeOn(Schedulers.io())
+                    Flowable.range(currentPage + 1, it)
+                }
+                .concatMap {
+//                    Timber.d("searching category no: ${currentCategory?.number} paginator current page: $it, currentPage: $currentPage")
+                    Flowable.just(it)
+                            .doOnNext { currentPage = it }
+                            // skip further request when already reached the end of the result
+                            .filter {newPage ->
+                                (totalResultCount == -1 || totalResultCount >= (newPage - 1) * ITEMS_PER_ROW)
+//                                        .also {
+//                                            Timber.d("paginator filter result: $it, totalResultCount: $totalResultCount newPage: $newPage")
+//                                        }
+                            }
+                            .concatMap { apiService.search(
+                                    query = null,
+                                    category = currentCategory?.number,
+                                    page = it,
+                                    rows = ITEMS_PER_ROW)
+                                    .doOnNext {
+                                        currentPage++
+                                        totalResultCount = it.totalCount
+                                    }
+                                    .subscribeOn(Schedulers.io())
+                                    .doOnCancel {
+                                        Timber.d("trying to cancel apiService.search")
+                                    } }
+
+                            // update current page number from the backend
+                            .doOnNext { it.page ?.also { currentPage = it } }
 
                 }
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext {
-                    totalResultCount = it.totalCount
-                    if (totalResultCount <= listingList.size + it.list.size) {
-                        Timber.d("reached the end of the results, total: ${it.totalCount}, current: ${listingList.size + it.list.size}")
-                    }
-                }
                 .subscribe({
                     val currentSize = listingList.size
                     listingList.addAll(it.list)
-                    currentPage++
                     loading = false
                     view.hideProgress(listingList.size, totalResultCount)
                     view.updateListings(listingList, currentSize, listingList.size, ListingView.Notify.INSERT)
@@ -92,7 +109,6 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                     view.showError(it.localizedMessage)
                 })
     }
-
 
     override fun onViewCreated() {
         super.onViewCreated()
@@ -169,6 +185,42 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     override fun getListingSize(): Int = listingList.size
 
     override fun getListingAtIndex(index: Int): Listing = listingList[index]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /** methods that not currently in use */
 

@@ -67,7 +67,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
         // gridLayoutManager.findFirstCompletelyVisibleItemPosition()
         topCategoryNavigationBar.setCategorySelectListener(this)
 
-        Timber.d("presenter: $presenter")
+//        Timber.d("presenter: $presenter")
     }
 
     override fun onStart() {
@@ -84,14 +84,14 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     /** CategorySelectListener */
     override fun onSelectCategory(newCategory: Category) {
-        Timber.d("onSelectCategory setting to: $newCategory")
+//        Timber.d("onSelectCategory setting to: $newCategory")
         presenter.onSelectCategory(newCategory)
     }
 
     /** category */
 
     override fun setCurrentCategory(currentCategory: Category) {
-        Timber.d("setCurrentCategory: $currentCategory")
+//        Timber.d("setCurrentCategory: $currentCategory")
         topCategoryNavigationBar.setCurrentCategory(currentCategory)
 
         // TODO: DEBUG ONLY
@@ -109,7 +109,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
 
     override fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?, operation: ListingView.Notify?) {
-        Timber.d("updateListings length: ${listings.size} from: $from, to: $to")
+//        Timber.d("updateListings length: ${listings.size} from: $from, to: $to")
 
         when (operation) {
             ListingView.Notify.INSERT -> {
@@ -135,7 +135,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     }
 
     override fun showProgress() {
-        Timber.d("loading started ....................... ")
+//        Timber.d("loading started ....................... ")
     }
 
     override fun hideProgress(currentCount: Int, totalCount: Int) {

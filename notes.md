@@ -7,7 +7,7 @@
 
 
 
-# crashes
+# crashes / bugs
 1. ~~only happened once, not able to reproduce~~ fixed [#1b571f2]
 ```
 ~~2018-05-02 17:41:21.498 22561-22561/com.example.derek.trademeapi E/AndroidRuntime: FATAL EXCEPTION: main
@@ -75,5 +75,5 @@
 ```
 
 2. race condition when new request are fired before last one was cancelled (paginatorDisposable for category)
-3.  
+3. duplicated results when reaching the end of the list (listings)
 
