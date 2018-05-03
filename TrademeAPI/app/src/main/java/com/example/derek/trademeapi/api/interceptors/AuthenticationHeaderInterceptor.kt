@@ -9,9 +9,7 @@ import java.util.*
 
 /**
  * Created by derek on 30/04/18.
- */
-
-/**
+ *
  * Custom header, use @HEADERS("@: NoAuth") to disable authentication header for the request
  * */
 class AuthenticationHeaderInterceptor : Interceptor {
@@ -19,7 +17,7 @@ class AuthenticationHeaderInterceptor : Interceptor {
         chain?.let {
             val original = chain.request()
             val customAnnotations = original.headers().values("@")
-            var request : Request
+            val request : Request
             if (customAnnotations.contains("NoAuth")) {
                 request = original.newBuilder().removeHeader("@").build()
             } else {

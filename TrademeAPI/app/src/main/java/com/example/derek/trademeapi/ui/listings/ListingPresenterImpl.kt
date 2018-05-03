@@ -77,9 +77,6 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                             // skip further request when already reached the end of the result
                             .filter {newPage ->
                                 (totalResultCount == -1 || totalResultCount >= (newPage - 1) * ITEMS_PER_ROW)
-//                                        .also {
-//                                            Timber.d("paginator filter result: $it, totalResultCount: $totalResultCount newPage: $newPage")
-//                                        }
                             }
                             .concatMap { apiService.search(
                                     query = null,
@@ -170,6 +167,8 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
             view.updateListings(listingList, 0, to, ListingView.Notify.CLEAR)
             // loading indicator (can't be bothered)
 
+            val newCategory = currentCategory ?: rootCategory
+            if (newCategory != null) view.setCurrentCategory(newCategory)
 
             loadMoreListings(INITIAL_LOAD_PAGES)
         } else {

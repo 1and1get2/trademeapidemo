@@ -16,14 +16,12 @@ import com.example.derek.trademeapi.ui.listings.CategorySelectListener
 import com.example.derek.trademeapi.util.px
 import timber.log.Timber
 
-
 /**
- * Created by derek on 2/05/18.
+ * Created by derek on 3/05/18.
  */
-class TopCategoryNavigationBar @JvmOverloads constructor(
+class TopCategorySelector @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : RecyclerView(context, attrs, defStyleAttr) {
 
-    private val categoryHierarchy = ArrayList<Category>()
     private var currentCategory: Category? = null
     private var categorySelectListener: CategorySelectListener? = null
 
@@ -45,21 +43,13 @@ class TopCategoryNavigationBar @JvmOverloads constructor(
             return
         }
 
+        val oldSize = this.currentCategory?.subcategories?.size ?: 0
+        val newSize = currentCategory.subcategories?.size ?: 0
         this.currentCategory = currentCategory
-        val oldSize = categoryHierarchy.size
-
-        // build categoryHierarchy
-        categoryHierarchy.clear()
-        var c: Category = currentCategory
-        do { categoryHierarchy.add(0, c)
-        } while (c.parent?.let { c = it } != null)
-
-        val newSize = categoryHierarchy.size
 
 //        adapter.notifyItemRangeChanged(0, Math.max(oldSize, newSize))
         adapter.notifyDataSetChanged()
     }
-
 
     /** recycler view */
     class ViewHolder(item: TextView) : RecyclerView.ViewHolder(item)
@@ -74,23 +64,23 @@ class TopCategoryNavigationBar @JvmOverloads constructor(
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
                 ViewHolder(TextView(parent.context).also {
                     it.layoutParams = RecyclerView.LayoutParams(layoutParams)
-                    it.setPadding(13.px)
+                    it.setPadding(7.px)
                     it.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                             parent.context.resources.getDimensionPixelSize(
-                                    R.dimen.view_listing_top_navi_bar_category_font_size).toFloat())
+                                    R.dimen.view_listing_top_navi_bar_category_selector_font_size).toFloat())
                     it.setSingleLine(true)
                     it.gravity = Gravity.CENTER
                 })
 
-
-
-        override fun getItemCount(): Int = categoryHierarchy.size
+        override fun getItemCount(): Int = (currentCategory?.subcategories?.size
+                ?: 0).also { Timber.d("getItemCount: $it") }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             (holder.itemView as? TextView)?.also {
-                val category = categoryHierarchy[position]
-                it.text = category.name
-                it.setOnClickListener { categorySelectListener?.onSelectCategory(category) }
+                currentCategory?.subcategories?.get(position)?.also { category ->
+                    it.text = category.name
+                    it.setOnClickListener { categorySelectListener?.onSelectCategory(category) }
+                }
             }
         }
     }

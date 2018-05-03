@@ -9,4 +9,9 @@
     <color name="background">#ffffff</color>
 
     <color name="actionMenuTextColor">@color/textColorPrimary</color>
+
+
+    <!-- TopCategorySelector -->
+    <color name="top_category_selector_item_view_border">#FFA933</color>
+    <color name="top_category_selector_item_view_background">#ffffff</color>
 </resources>

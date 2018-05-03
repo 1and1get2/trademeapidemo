@@ -18,6 +18,7 @@ import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
 import com.example.derek.trademeapi.ui.components.GridEndlessRecyclerViewScrollListener
 import com.example.derek.trademeapi.ui.components.TopCategoryNavigationBar
+import com.example.derek.trademeapi.ui.components.TopCategorySelector
 import com.example.derek.trademeapi.util.GridLayoutColumnQty
 import com.example.derek.trademeapi.util.bindView
 import timber.log.Timber
@@ -35,11 +36,12 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     private val toolbar: Toolbar by bindView(R.id.toolbar)
     private val rootCoordinatorLayout: CoordinatorLayout by bindView(R.id.root)
     private val topCategoryNavigationBar: TopCategoryNavigationBar by bindView(R.id.top_navi_bar)
+    private val topCategorySelector: TopCategorySelector by bindView(R.id.top_navi_bar_selector)
 
     private val adapter: Adapter by lazy { Adapter(presenter) }
 
-    private lateinit var gridLayoutManager: GridLayoutManager
-    private lateinit var listingScrollListener: GridEndlessRecyclerViewScrollListener
+    private lateinit var layoutManager: GridLayoutManager
+    private lateinit var listingScrollListener: RecyclerView.OnScrollListener
 
 
     private val listingRecyclerView: RecyclerView by bindView(R.id.recycler_view)
@@ -51,12 +53,12 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
         val gridLayoutColumnQty = GridLayoutColumnQty(applicationContext, R.layout.view_listing_item)
         val column = gridLayoutColumnQty.calculateNoOfColumns()
-
-        listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column)
-                .also { gridLayoutManager = it }
         listingRecyclerView.adapter = adapter
 
-        listingScrollListener = GridEndlessRecyclerViewScrollListener(gridLayoutManager,
+        listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column)
+                .also { layoutManager = it }
+
+        listingScrollListener = GridEndlessRecyclerViewScrollListener(layoutManager,
                 object : GridEndlessRecyclerViewScrollListener.DataLoader {
                     override fun onLoadMore(): Boolean = presenter.loadMoreListings(1)
                 })
@@ -66,7 +68,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
         // gridLayoutManager.findFirstCompletelyVisibleItemPosition()
         topCategoryNavigationBar.setCategorySelectListener(this)
-
+        topCategorySelector.setCategorySelectListener(this)
 //        Timber.d("presenter: $presenter")
     }
 
@@ -84,8 +86,11 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     /** CategorySelectListener */
     override fun onSelectCategory(newCategory: Category) {
-//        Timber.d("onSelectCategory setting to: $newCategory")
         presenter.onSelectCategory(newCategory)
+    }
+
+    override fun onSearchTermChanged(newSearch: String?) {
+        Timber.d("onSearchTermChanged: $newSearch")
     }
 
     /** category */
@@ -93,15 +98,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     override fun setCurrentCategory(currentCategory: Category) {
 //        Timber.d("setCurrentCategory: $currentCategory")
         topCategoryNavigationBar.setCurrentCategory(currentCategory)
-
-        // TODO: DEBUG ONLY
-        var c = currentCategory
-        while (c.subcategories?.get(0)?.let { c = it } != null) { }
-//        c = Category("0001-0268")
-        topCategoryNavigationBar.postDelayed({
-            topCategoryNavigationBar.setCurrentCategory(c)
-            presenter.onSelectCategory(c)
-        }, 3000L)
+        topCategorySelector.setCurrentCategory(currentCategory)
     }
 
 
@@ -184,4 +181,5 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
  * */
 interface CategorySelectListener {
     fun onSelectCategory(newCategory: Category)
+    fun onSearchTermChanged(newSearch: String?)
 }
