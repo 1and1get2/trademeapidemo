@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
+apply plugin: 'io.fabric'
 
 android {
     compileSdkVersion 27
@@ -36,6 +37,10 @@ android {
 
 kapt {
     generateStubs = true
+}
+
+repositories {
+    maven { url 'https://maven.fabric.io/public' }
 }
 
 dependencies {
@@ -94,6 +99,7 @@ dependencies {
 //    kapt 'se.ansman.kotshi:compiler:1.0.3'
 
     /** debug */
+    implementation('com.crashlytics.sdk.android:crashlytics:2.9.2@aar') { transitive = true }
     testImplementation 'junit:junit:4.12'
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.5.4'
     releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'

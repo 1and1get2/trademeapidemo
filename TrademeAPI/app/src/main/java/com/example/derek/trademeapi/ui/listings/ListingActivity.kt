@@ -14,6 +14,7 @@ import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.ViewGroup
+import com.crashlytics.android.Crashlytics
 import com.example.derek.trademeapi.BR
 import com.example.derek.trademeapi.R
 import com.example.derek.trademeapi.base.BaseActivity
@@ -79,6 +80,11 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     override fun onStart() {
         super.onStart()
         presenter.onViewCreated()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Crashlytics.logException(Throwable("ListingActivity onPause"))
     }
 
     override fun onDestroy() {
