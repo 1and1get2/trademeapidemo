@@ -21,7 +21,8 @@ import javax.inject.Inject
  * Using Kotlin, RxJava 2 and Retrofit to consume REST API on Android
  * https://softwaremill.com/kotlin-rxjava2-retrofit-android/
  *
- *
+ * http://www.baeldung.com/rxjava-backpressure
+ * Dealing with Backpressure with RxJava
  */
 class ListingPresenterImpl @Inject constructor(override val view: ListingView) : ListingPresenter {
 
@@ -53,14 +54,15 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     private var tabLastTabTime: Long = 0
 
     companion object {
-        const val INITIAL_LOAD_PAGES = 2
-        const val ITEMS_PER_ROW = 40
+        const val INITIAL_LOAD_PAGES = 1
+        const val ITEMS_PER_ROW = 60
         const val SCROLL_TO_TOP_DELAY_MS = 500
     }
 
     init {
         paginator
                 .onBackpressureLatest()
+//                .onBackpressureDrop()
                 .doOnNext { view.showProgress() }
                 .concatMap { Flowable.range(currentPage + 1, it) }
                 .concatMap { Flowable.just(it) }
