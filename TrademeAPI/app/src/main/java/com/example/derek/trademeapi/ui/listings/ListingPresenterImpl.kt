@@ -28,28 +28,30 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
     private val compositeDisposable: CompositeDisposable by lazy { CompositeDisposable() }
 
-
-    @Inject lateinit var apiService: TradeMeApiService
-
+    @Inject
+    lateinit var apiService: TradeMeApiService
 
     private var rootCategory: Category? = null
     private var currentCategory: Category? = null
 
-    private val listingList = ArrayList<Listing>(30)
-    private var currentListingIndex = 0
+    private val listingList = ArrayList<Listing>(ITEMS_PER_ROW * 3)
+
+    private var currentListingPosition = 0
+    private var currentPage: Int = 0 // page number starts at 1
+    private var totalResultCount: Int = -1 //reached the end of the results
+    private var currentSearch: String? = null
 
     private val paginator: PublishProcessor<Int> = PublishProcessor.create()
     private val paginatorDisposable: Disposable
     private var loading: Boolean = false
-    private var currentPage: Int = 0 // page number starts at 1
-    private var totalResultCount : Int = -1 //reached the end of the results
-    private var paginationSubscription : Subscription? = null
+
+    private var paginationSubscription: Subscription? = null
 
 
-    private val searchPublishProcessor: PublishProcessor<String> = PublishProcessor.create()
+    private val searchSuggestionPublishProcessor: PublishProcessor<String> = PublishProcessor.create()
 
 
-    private var tabLastTabTime : Long = 0
+    private var tabLastTabTime: Long = 0
 
     companion object {
         const val INITIAL_LOAD_PAGES = 2
@@ -58,6 +60,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     }
 
     init {
+
         paginatorDisposable = paginator.onBackpressureDrop()
                 .doOnNext {
                     Timber.d("it is currently loading: $loading, paginationSubscription: $paginationSubscription")
@@ -75,30 +78,29 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                     Flowable.range(currentPage + 1, it)
                 }
                 .concatMap {
-//                    Timber.d("searching category no: ${currentCategory?.number} paginator current page: $it, currentPage: $currentPage")
+                    //                    Timber.d("searching category no: ${currentCategory?.number} paginator current page: $it, currentPage: $currentPage")
                     Flowable.just(it)
                             .doOnNext { currentPage = it }
                             // skip further request when already reached the end of the result
-                            .filter {newPage ->
+                            .filter { newPage ->
                                 (totalResultCount == -1 || totalResultCount >= (newPage - 1) * ITEMS_PER_ROW)
                             }
                             .concatMap {
                                 apiService.search(
-                                    query = null,
-                                    category = currentCategory?.number,
-                                    page = it,
-                                    rows = ITEMS_PER_ROW)
-                                    .doOnNext {
-                                        currentPage++
-                                        totalResultCount = it.totalCount
-                                    }
-                                    .subscribeOn(Schedulers.io())
-                                    .doOnCancel {
-                                        Timber.d("canceling old apiService.search request")
-                                    } }
+                                        query = currentSearch, category = currentCategory?.number,
+                                        page = it, rows = ITEMS_PER_ROW)
+                                        .doOnNext {
+                                            currentPage++
+                                            totalResultCount = it.totalCount
+                                        }
+                                        .subscribeOn(Schedulers.io())
+                                        .doOnCancel {
+                                            Timber.d("canceling old apiService.search request")
+                                        }
+                            }
 
                             // update current page number from the backend
-                            .doOnNext { it.page ?.also { currentPage = it } }
+                            .doOnNext { it.page?.also { currentPage = it } }
 
                 }
                 .observeOn(AndroidSchedulers.mainThread())
@@ -107,7 +109,9 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                     listingList.addAll(it.list)
                     loading = false
                     view.hideProgress(listingList.size, totalResultCount)
-                    view.updateListings(listingList, currentSize, listingList.size, ListingView.Notify.INSERT)
+                    //view.updateListings(listingList, currentSize, listingList.size, ListingView.Notify.INSERT)
+                    view.updateListings(listingList.toList())
+
                 }, {
                     loading = false
                     view.hideProgress(listingList.size, totalResultCount)
@@ -116,66 +120,25 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                     compositeDisposable.add(it)
                 }
 
-        searchPublishProcessor.onBackpressureDrop()
-/*                .concatMap {
-                    apiService.suggestions(
-                            categoryId = currentCategory?.number?.toIntOrNull(),
-                            searchString = if (it.isEmpty()) null else it )
-                            .subscribeOn(Schedulers.io()) }*/
-
+        searchSuggestionPublishProcessor
+                .onBackpressureDrop()
                 .concatMap {
                     apiService.suggestions(
                             categoryId = 0,
-                            searchString = "iphone" )
-                            .subscribeOn(Schedulers.io()) }
-
-
+                            searchString = if (it.isEmpty()) null else it)
+                            .subscribeOn(Schedulers.io())
+                }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-//                    view.updateSearchSuggestion(it.toList())
-                    val list = it.categorySuggestions?.map { it.name }?.toList()
-                    Timber.d("searchPublishProcessor list: $list")
+                    val list: List<String> = it.categorySuggestions?.filter { it.name != null }?.map { it.name!! }?.distinct()?.toList()
+                            ?: listOf()
+                    view.updateSearchSuggestion(list)
 
                 }, {
                     view.showError(it.localizedMessage)
                 }).also {
                     compositeDisposable.add(it)
                 }
-
-
-
-/*        searchPublishProcessor.onBackpressureDrop()
-                .concatMap {
-                    apiService.suggestions(
-                            categoryId = currentCategory?.number?.toIntOrNull(),
-                            searchString = if (it.isEmpty()) null else it )
-                            .subscribeOn(Schedulers.io()) }
-                .observeOn(AndroidSchedulers.mainThread())
-//                .concatMap { Flowable.fromArray(it.categorySuggestions) }
-                .flatMap {
-                    Flowable.just(it.categorySuggestions.asOptional())
-                }
-                .flatMap {
-                    if (it.isPresent) {
-                        Flowable.fromIterable(it.value as List<CategorySuggestion>)
-                    } else {
-                        Flowable.just(None)
-                    }
-                }
-                .flatMap { it }
-                .flatMapIterable { it.categorySuggestions }
-                .concatMap { Flowable.just(it.name) }
-                .toList()
-                .subscribe({
-                    view.updateSearchSuggestion(it.toList())
-                }, {
-                    view.showError(it.localizedMessage)
-                })*/
-
-//                .subscribe { view.updateListings(it.categorySuggestions?) }
-
-
-
     }
 
     override fun onViewCreated() {
@@ -183,8 +146,6 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
         onSelectCategory(null) // load all listings
         loadCategories()
-
-        searchPublishProcessor.onNext("hi")
     }
 
     override fun onViewDestroyed() {
@@ -212,10 +173,17 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     }
 
 
+    private fun reset() {
+        listingList.clear()
+        totalResultCount = -1
+        currentListingPosition = 0
+        currentPage = 0
+    }
+
     /** listings */
 
     override fun scrollToTop() {
-        currentListingIndex = 0
+        currentListingPosition = 0
         view.scrollToPosition(0)
     }
 
@@ -227,14 +195,12 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
         if (this.currentCategory == null || this.currentCategory != currentCategory) {
 //            if (this.currentCategory != null) compositeDisposable.clear()
 
+
+            reset()
             this.currentCategory = currentCategory
-            this.currentPage = 0
-            this.totalResultCount = -1
 
 
-            val to = listingList.size
-            listingList.clear()
-            view.updateListings(listingList, 0, to, ListingView.Notify.CLEAR)
+            view.updateListings(listingList.toList())
             // loading indicator (can't be bothered)
 
             val newCategory = currentCategory ?: rootCategory
@@ -245,8 +211,12 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
             Timber.d("onSelectCategory selecting the same category: ${currentCategory?.name}")
             val currentTime = System.currentTimeMillis()
             tabLastTabTime = when {
-                currentTime - tabLastTabTime < SCROLL_TO_TOP_DELAY_MS -> { scrollToTop(); 0 }
-                else -> { currentTime }
+                currentTime - tabLastTabTime < SCROLL_TO_TOP_DELAY_MS -> {
+                    scrollToTop(); 0
+                }
+                else -> {
+                    currentTime
+                }
             }
         }
     }
@@ -259,20 +229,32 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
         return true
     }
 
-    override fun getListingSize(): Int = listingList.size
-
-    override fun getListingAtIndex(index: Int): Listing = listingList[index]
-
-
     /** search */
     override fun onQueryTextChange(newText: String?) {
-        TODO("not implemented")
+        Timber.d("onQueryTextChange: $newText")
+        if (newText != currentSearch) {
+            reset()
+            currentSearch = newText
+            loadMoreListings(INITIAL_LOAD_PAGES)
+        }
     }
 
     override fun onQueryTextSubmit(query: String?) {
-        TODO("not implemented")
+        // not worried
+        Timber.d("onQueryTextSubmit: $query")
     }
+
+
+
+
+
+
+
+
+
+
     /** methods that not currently in use */
+
 
     /** load more category on demand */
     // https://stackoverflow.com/questions/43364077/rxjava-load-items-on-demand

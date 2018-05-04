@@ -10,15 +10,11 @@ import com.example.derek.trademeapi.model.Listing
  */
 
 interface ListingView : BaseView<ListingPresenter> {
-    enum class Notify {
-        INSERT, CLEAR, UPDATE, REMOVE
-    }
-
     /** category */
     fun setCurrentCategory(currentCategory: Category)
 
     /** listings */
-    fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?, operation: Notify?)
+    fun updateListings(listings: List<Listing>)
     fun scrollToPosition(position: Int)
     fun showProgress()
     fun hideProgress(currentCount: Int, totalCount: Int)
@@ -30,14 +26,13 @@ interface ListingView : BaseView<ListingPresenter> {
 
 
 interface ListingPresenter : BasePresenter<ListingView> {
+
     /** category */
     fun onSelectCategory(currentCategory: Category?)
 
     /** listings */
     fun loadMoreListings(page: Int = 1) : Boolean // @return more to load
     fun scrollToTop()
-    fun getListingSize(): Int
-    fun getListingAtIndex(index: Int): Listing
 
     /** search */
     fun onQueryTextChange(newText: String?)

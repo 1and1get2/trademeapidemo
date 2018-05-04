@@ -6,16 +6,14 @@ import android.databinding.ViewDataBinding
 import android.os.Bundle
 import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.Snackbar
+import android.support.v7.util.DiffUtil
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
 import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
 import android.view.Menu
-import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseAdapter
-import android.widget.TextView
 import com.example.derek.trademeapi.BR
 import com.example.derek.trademeapi.R
 import com.example.derek.trademeapi.base.BaseActivity
@@ -42,17 +40,16 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     private val rootCoordinatorLayout: CoordinatorLayout by bindView(R.id.root)
     private val topCategoryNavigationBar: TopCategoryNavigationBar by bindView(R.id.top_navi_bar)
     private val topCategorySelector: TopCategorySelector by bindView(R.id.top_navi_bar_selector)
-//    private val searchListView: ListView by bindView(R.id.list_item)
-    private var searchView: SearchView? = null
-
-    private val listAdapter: Adapter by lazy { Adapter(presenter) }
-    private val searchAdapter: SearchListAdapter by lazy { SearchListAdapter() }
-
-    private lateinit var layoutManager: GridLayoutManager
-    private lateinit var listingScrollListener: RecyclerView.OnScrollListener
-
-
     private val listingRecyclerView: RecyclerView by bindView(R.id.recycler_view)
+
+
+    private var searchView: SearchView? = null
+    private val listingDiffUtilCallback = ListingDiffUtilCallback()
+    private val listAdapter: Adapter by lazy { Adapter(listingList) }
+//    private val searchAdapter: SearchListAdapter by lazy { SearchListAdapter() }
+
+    private val listingList : ArrayList<Listing> = ArrayList()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,25 +58,22 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
         val gridLayoutColumnQty = GridLayoutColumnQty(applicationContext, R.layout.view_listing_item)
         val column = gridLayoutColumnQty.calculateNoOfColumns()
-        listingRecyclerView.adapter = listAdapter
 
-        listingRecyclerView.layoutManager = GridLayoutManager(getContext(), column)
-                .also { layoutManager = it }
+        val dataLoader = object : GridEndlessRecyclerViewScrollListener.DataLoader {
+            override fun onLoadMore(): Boolean = presenter.loadMoreListings(1)
+        }
+        val listingsLayoutManager  = GridLayoutManager(getContext(), column)
+        val listingScrollListener = GridEndlessRecyclerViewScrollListener(listingsLayoutManager, dataLoader)
 
-        listingScrollListener = GridEndlessRecyclerViewScrollListener(layoutManager,
-                object : GridEndlessRecyclerViewScrollListener.DataLoader {
-                    override fun onLoadMore(): Boolean = presenter.loadMoreListings(1)
-                })
-
-        listingRecyclerView.addOnScrollListener(listingScrollListener)
-
-
-
+        listingRecyclerView.apply {
+            adapter = listAdapter
+            layoutManager = listingsLayoutManager
+            addOnScrollListener(listingScrollListener)
+        }
 
         // gridLayoutManager.findFirstCompletelyVisibleItemPosition()
         topCategoryNavigationBar.setCategorySelectListener(this)
         topCategorySelector.setCategorySelectListener(this)
-//        Timber.d("presenter: $presenter")
     }
 
     override fun onStart() {
@@ -101,10 +95,24 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 //            searchListView.adapter = searchAdapter
             searchView = searchActionMenuItem.actionView as? SearchView
             searchView?.also { searchView->
-                searchView.setQueryHint("Search People")
+                searchView.setQueryHint("Search")
                 searchView.setIconified(false);
-                searchView.setOnQueryTextListener(searchAdapter)
-                searchView.setOnCloseListener(searchAdapter)
+//                searchView.setOnQueryTextListener(searchAdapter)
+//                searchView.setOnCloseListener(searchAdapter)
+//                searchView.setOnSuggestionListener(searchAdapter)
+//                searchView.suggestionsAdapter = searchAdapter
+                searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
+                    override fun onQueryTextSubmit(query: String?): Boolean {
+                        presenter.onQueryTextSubmit(query)
+                        return true
+                    }
+
+                    override fun onQueryTextChange(newText: String?): Boolean {
+                        presenter.onQueryTextChange(newText)
+                        return true
+                    }
+                })
+
             }
 
 //            searchView?.setOnSuggestionListener(searchAdapter)
@@ -116,51 +124,8 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     /** search */
     override fun updateSearchSuggestion(suggestions: List<String>) {
-        searchAdapter.updateSearchSuggestion(suggestions)
-    }
-
-    class SearchListAdapter : BaseAdapter(), SearchView.OnQueryTextListener, SearchView.OnCloseListener {
-        private var suggestions : List<String>? = null
-
-        /** data */
-        fun updateSearchSuggestion(suggestions: List<String>) {
-            this.suggestions = suggestions
-            notifyDataSetChanged()
-        }
-        /** ListView */
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            var v = convertView as? TextView ?: TextView(parent.context)
-            return v
-        }
-
-        override fun getItem(position: Int): Any {
-            TODO("not implemented")
-        }
-
-        override fun getItemId(position: Int): Long {
-            TODO("not implemented")
-        }
-
-        override fun getCount(): Int {
-            TODO("not implemented")
-        }
-
-        /** SearchView.OnQueryTextListener */
-        override fun onQueryTextSubmit(query: String?): Boolean {
-            Timber.d("onQueryTextSubmit: $query")
-            return false
-        }
-
-        override fun onQueryTextChange(newText: String?): Boolean {
-            Timber.d("onQueryTextChange: $newText")
-            return true
-        }
-
-        /** SearchView.OnCloseListener */
-        override fun onClose(): Boolean {
-//            suggestions.clear()
-            return false
-        }
+        Timber.d("searchSuggestionPublishProcessor list: $suggestions")
+//        searchAdapter.updateSearchSuggestion(suggestions)
     }
 
 
@@ -168,10 +133,6 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     /** CategorySelectListener */
     override fun onSelectCategory(newCategory: Category) {
         presenter.onSelectCategory(newCategory)
-    }
-
-    override fun onSearchTermChanged(newSearch: String?) {
-        Timber.d("onSearchTermChanged: $newSearch")
     }
 
     /** category */
@@ -184,27 +145,36 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
 
     /** listing */
-
-    override fun updateListings(listings: MutableList<Listing>, from: Int?, to: Int?, operation: ListingView.Notify?) {
-//        Timber.d("updateListings length: ${listings.size} from: $from, to: $to")
-
-        when (operation) {
-            ListingView.Notify.INSERT -> {
-                listAdapter.notifyItemInserted(from ?: 0)
-            }
-            ListingView.Notify.CLEAR -> {
-                listAdapter.notifyItemRangeRemoved(0, to ?: listings.size)
-            }
-            ListingView.Notify.UPDATE -> {
-                listAdapter.notifyItemRangeChanged(from ?: 0, to ?: listings.size)
-            }
-            ListingView.Notify.REMOVE -> {
-                listAdapter.notifyItemRangeRemoved(from ?: 0, to ?: listings.size)
-            }
-            null -> {
-                listAdapter.notifyDataSetChanged()
+    private inner class ListingDiffUtilCallback : DiffUtil.Callback() {
+        var newListings: List<Listing>? = null
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            if (newListings == null) {
+                throw RuntimeException("newListings has not been set")
+            } else {
+                return listingList[oldItemPosition] == newListings!![newItemPosition]
             }
         }
+
+        override fun getOldListSize(): Int {
+            return listingList.size
+        }
+
+        override fun getNewListSize(): Int {
+            return newListings?.size ?: 0
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return areItemsTheSame(oldItemPosition, newItemPosition)
+        }
+    }
+
+    override fun updateListings(listings: List<Listing>) {
+        listingDiffUtilCallback.newListings = listings
+        val diff = DiffUtil.calculateDiff(listingDiffUtilCallback)
+        this.listingList.clear()
+        this.listingList.addAll(listings)
+        listingDiffUtilCallback.newListings = null
+        diff.dispatchUpdatesTo(listAdapter)
     }
 
     override fun scrollToPosition(position: Int) {
@@ -236,7 +206,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
         }
     }
 
-    class Adapter(private val presenter: ListingPresenter) : RecyclerView.Adapter<ItemViewHolder>() {
+    class Adapter(private val listings: ArrayList<Listing>) : RecyclerView.Adapter<ItemViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
             val layoutInflater = LayoutInflater.from(parent.context)
@@ -246,11 +216,11 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
         }
 
         override fun getItemCount(): Int {
-            return presenter.getListingSize()
+            return listings.size
         }
 
         override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
-            val listing = presenter.getListingAtIndex(position)
+            val listing = listings[position]
             holder.bind(listing)
         }
     }
@@ -261,5 +231,4 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
  * */
 interface CategorySelectListener {
     fun onSelectCategory(newCategory: Category)
-    fun onSearchTermChanged(newSearch: String?)
 }
