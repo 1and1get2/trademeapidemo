@@ -6,6 +6,8 @@ import android.databinding.ViewDataBinding
 import android.os.Bundle
 import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.Snackbar
+import android.support.v4.widget.CursorAdapter
+import android.support.v4.widget.SimpleCursorAdapter
 import android.support.v7.util.DiffUtil
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -49,7 +51,9 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     private var searchActionMenuItem: MenuItem? = null
     private val listingDiffUtilCallback = ListingDiffUtilCallback()
     private val listAdapter: Adapter by lazy { Adapter(listingList) }
-//    private val searchAdapter: SearchListAdapter by lazy { SearchListAdapter() }
+    private val searchAdapter: SimpleCursorAdapter by lazy {
+        SimpleCursorAdapter(getContext(), R.layout.view_search_item_listing, null, arrayOf("query"), intArrayOf(R.id.search_item_text_view), CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER)
+    }
 
     private val listingList : ArrayList<Listing> = ArrayList()
 
@@ -112,6 +116,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
         searchActionMenuItem = menu.findItem(R.id.action_search)?.apply {
             searchView = actionView as? SearchView
             searchView?.apply {
+                suggestionsAdapter = searchAdapter
                 setQueryHint("Search")
                 setIconified(false)
                 setOnQueryTextListener(
@@ -134,7 +139,14 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     /** search */
     override fun updateSearchSuggestion(suggestions: List<String>) {
         Timber.d("searchSuggestionPublishProcessor list: $suggestions")
-//        searchAdapter.updateSearchSuggestion(suggestions)
+
+//        val c = MatrixCursor(arrayOf(BaseColumns._ID, "query"))
+//        if (suggestions.isNotEmpty()) {
+//            for (i in 0..suggestions.size) {
+//                c.addRow(arrayOf(i, suggestions[i]))
+//            }
+//        }
+//        searchAdapter.changeCursor(c)
     }
 
 
@@ -147,7 +159,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     /** category */
 
     override fun setCurrentCategory(currentCategory: Category) {
-//        Timber.d("setCurrentCategory: $currentCategory")
+        Timber.d("setCurrentCategory: $currentCategory")
         topCategoryNavigationBar.setCurrentCategory(currentCategory)
         topCategorySelector.setCurrentCategory(currentCategory)
     }
@@ -201,7 +213,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     }
 
     override fun showError(message: String) {
-        Timber.e("loading error: $message")
+//        Timber.e("loading error: $message")
         Snackbar.make(rootCoordinatorLayout, message, Snackbar.LENGTH_LONG).show()
     }
 
