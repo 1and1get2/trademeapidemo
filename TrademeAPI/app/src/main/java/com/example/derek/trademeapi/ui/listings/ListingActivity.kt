@@ -13,6 +13,7 @@ import android.support.v7.widget.SearchView
 import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
 import android.view.Menu
+import android.view.MenuItem
 import android.view.ViewGroup
 import com.crashlytics.android.Crashlytics
 import com.example.derek.trademeapi.BR
@@ -45,6 +46,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
 
     private var searchView: SearchView? = null
+    private var searchActionMenuItem: MenuItem? = null
     private val listingDiffUtilCallback = ListingDiffUtilCallback()
     private val listAdapter: Adapter by lazy { Adapter(listingList) }
 //    private val searchAdapter: SearchListAdapter by lazy { SearchListAdapter() }
@@ -82,6 +84,12 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
         presenter.onViewCreated()
     }
 
+    override fun onBackPressed() {
+        if (searchActionMenuItem?.isActionViewExpanded == true) {
+            searchActionMenuItem!!.collapseActionView()
+        } else super.onBackPressed()
+    }
+
     override fun onPause() {
         super.onPause()
         Crashlytics.logException(Throwable("ListingActivity onPause"))
@@ -96,36 +104,31 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate( R.menu.activity_listing, menu)
-        menu?.also {
-            val searchActionMenuItem = menu.findItem(R.id.action_search)
-//            searchListView.adapter = searchAdapter
-            searchView = searchActionMenuItem.actionView as? SearchView
-            searchView?.also { searchView->
-                searchView.setQueryHint("Search")
-                searchView.setIconified(false);
-//                searchView.setOnQueryTextListener(searchAdapter)
-//                searchView.setOnCloseListener(searchAdapter)
-//                searchView.setOnSuggestionListener(searchAdapter)
-//                searchView.suggestionsAdapter = searchAdapter
-                searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
-                    override fun onQueryTextSubmit(query: String?): Boolean {
-                        presenter.onQueryTextSubmit(query)
-                        return true
-                    }
-
-                    override fun onQueryTextChange(newText: String?): Boolean {
-                        presenter.onQueryTextChange(newText)
-                        return true
-                    }
-                })
-
-            }
-
-//            searchView?.setOnSuggestionListener(searchAdapter)
-//            searchActionMenuItem.collapseActionView()
-        }
-
+        menu?.also { setUpSearchActionMenuItem(it) }
         return true
+    }
+
+    private fun setUpSearchActionMenuItem(menu: Menu) {
+        searchActionMenuItem = menu.findItem(R.id.action_search)?.apply {
+            searchView = actionView as? SearchView
+            searchView?.apply {
+                setQueryHint("Search")
+                setIconified(false)
+                setOnQueryTextListener(
+                        object : SearchView.OnQueryTextListener {
+                            override fun onQueryTextSubmit(query: String?): Boolean {
+                                presenter.onQueryTextSubmit(query)
+                                return true
+                            }
+
+                            override fun onQueryTextChange(newText: String?): Boolean {
+                                presenter.onQueryTextChange(newText)
+                                return true
+                            }
+                        }
+                )
+            }
+        }
     }
 
     /** search */
