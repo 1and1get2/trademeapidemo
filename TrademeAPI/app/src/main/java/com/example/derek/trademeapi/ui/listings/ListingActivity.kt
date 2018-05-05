@@ -84,20 +84,29 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
                     object : Search.OnQueryTextListener {
                         override fun onQueryTextSubmit(query: CharSequence?): Boolean {
                             presenter.onQueryTextSubmit(query.toString())
-                            return false
+                            searchView.close()
+                            return true
                         }
 
                         override fun onQueryTextChange(newText: CharSequence?) {
                             presenter.onQueryTextChange(newText.toString())
                         }
                     })
-            setOnLogoClickListener {
-//                if (text.isNotEmpty()) { text.clear() }
-                Timber.d("OnLogoClickListener")
-            }
+
             searchAdapter.setOnSearchItemClickListener{ position, title, subtitle ->
                 Timber.d("setOnSearchItemClickListener $position, $title, $subtitle")
-                setText(title)
+                setQuery(title, true)
+
+                // TODO: this is a workaround for a bug in the library causing the suggestion list won't hide (or to show again immediately after hiding)
+                postDelayed({
+                    try {
+                        val hideSuggestions = searchView.javaClass.getDeclaredMethod("hideSuggestions")
+                        hideSuggestions.isAccessible = true
+                        hideSuggestions.invoke(searchView)
+                    } catch (e: Exception) {
+                        Timber.e("Exception: $e")
+                    }
+                }, 150L)
             }
             searchView.adapter = searchAdapter
         }
@@ -133,7 +142,6 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate( R.menu.activity_listing, menu)
-//        menu?.also {  }
         return true
     }
 
