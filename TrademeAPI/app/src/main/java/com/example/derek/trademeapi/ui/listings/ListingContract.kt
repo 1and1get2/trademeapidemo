@@ -21,7 +21,7 @@ interface ListingView : BaseView<ListingPresenter> {
     fun showError(message: String)
 
     /** search */
-    fun updateSearchSuggestion(suggestions: List<String>)
+    fun updateSearchSuggestion(suggestions: List<String>?)
 }
 
 

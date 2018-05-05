@@ -21,6 +21,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.core.view.forEach
+import timber.log.Timber
 
 
 /**
@@ -29,7 +30,9 @@ import androidx.core.view.forEach
 
 
 fun checkMainThread(): Boolean {
-    return Looper.myLooper() == Looper.getMainLooper()
+    val main = Looper.myLooper() == Looper.getMainLooper()
+    Timber.d("Checking thread: ${if (!main) "not " else ""} on main Thread, name: ${Thread.currentThread().name}")
+    return main
 }
 
 fun Application.isNetworkConnected(): Boolean {

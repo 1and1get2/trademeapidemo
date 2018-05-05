@@ -3,6 +3,7 @@ package com.example.derek.trademeapi.ui.listings
 import com.example.derek.trademeapi.api.TradeMeApiService
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
+import com.example.derek.trademeapi.util.checkMainThread
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -101,7 +102,6 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
         searchSuggestionPublishProcessor
                 .onBackpressureLatest()
-                .observeOn(AndroidSchedulers.mainThread(), false, 1)
 //                .buffer(1)
                 .filter{( it.isNotEmpty()).also { if (!it) {Timber.e("search str is empty")} }}
                 .concatMap {
@@ -111,11 +111,14 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                             searchString = if (it.isEmpty()) null else it).subscribeOn(Schedulers.io()) }
 
                 .doOnCancel { Timber.d("canceling old apiService.search suggestion") }
+                .observeOn(AndroidSchedulers.mainThread(), false, 1)
                 .subscribe({
                     val list: List<String> = it.categorySuggestions?.filter { it.name != null }?.
                             map { it.name!! }?.distinct()?.toList() ?: listOf()
+                    Timber.d("updateSearchSuggestion: $list")
+                    checkMainThread()
                     view.updateSearchSuggestion(list)
-                    Timber.d("updateSearchSuggestion: ${list}")
+
                 }, {
                     view.showError("searchSuggestionPublisher: $it")
                     Timber.e("searchSuggestionPublisher: $it")

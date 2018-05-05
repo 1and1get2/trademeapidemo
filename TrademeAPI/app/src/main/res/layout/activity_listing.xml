@@ -50,4 +50,16 @@
         android:scrollbars="none"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
+    <com.lapism.searchview.widget.SearchView
+        android:id="@+id/searchView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="com.lapism.searchview.widget.SearchBehavior"
+        app:search_logo="hamburger_arrow"
+        app:search_shape="classic"
+        app:search_version_margins="toolbar"
+        app:search_version="toolbar"
+        app:search_hint="Search..."
+    />
+
 </android.support.design.widget.CoordinatorLayout>

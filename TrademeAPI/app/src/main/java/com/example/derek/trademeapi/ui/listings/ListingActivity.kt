@@ -6,12 +6,9 @@ import android.databinding.ViewDataBinding
 import android.os.Bundle
 import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.Snackbar
-import android.support.v4.widget.CursorAdapter
-import android.support.v4.widget.SimpleCursorAdapter
 import android.support.v7.util.DiffUtil
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.SearchView
 import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
 import android.view.Menu
@@ -28,6 +25,10 @@ import com.example.derek.trademeapi.ui.components.TopCategoryNavigationBar
 import com.example.derek.trademeapi.ui.components.TopCategorySelector
 import com.example.derek.trademeapi.util.GridLayoutColumnQty
 import com.example.derek.trademeapi.util.bindView
+import com.lapism.searchview.Search
+import com.lapism.searchview.widget.SearchAdapter
+import com.lapism.searchview.widget.SearchItem
+import com.lapism.searchview.widget.SearchView
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -46,16 +47,15 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     private val topCategorySelector: TopCategorySelector by bindView(R.id.top_navi_bar_selector)
     private val listingRecyclerView: RecyclerView by bindView(R.id.recycler_view)
 
+    private val searchView: SearchView by bindView(R.id.searchView)
 
-    private var searchView: SearchView? = null
-    private var searchActionMenuItem: MenuItem? = null
     private val listingDiffUtilCallback = ListingDiffUtilCallback()
     private val listAdapter: Adapter by lazy { Adapter(listingList) }
-    private val searchAdapter: SimpleCursorAdapter by lazy {
-        SimpleCursorAdapter(getContext(), R.layout.view_search_item_listing, null, arrayOf("query"), intArrayOf(R.id.search_item_text_view), CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER)
-    }
+
+    private val searchAdapter: SearchAdapter by lazy { SearchAdapter(getContext()) }
 
     private val listingList : ArrayList<Listing> = ArrayList()
+    private var suggestionList: List<String>? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,6 +78,30 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
             addOnScrollListener(listingScrollListener)
         }
 
+        with(searchView){
+            theme = R.style.AppTheme
+            setOnQueryTextListener(
+                    object : Search.OnQueryTextListener {
+                        override fun onQueryTextSubmit(query: CharSequence?): Boolean {
+                            presenter.onQueryTextSubmit(query.toString())
+                            return false
+                        }
+
+                        override fun onQueryTextChange(newText: CharSequence?) {
+                            presenter.onQueryTextChange(newText.toString())
+                        }
+                    })
+            setOnLogoClickListener {
+//                if (text.isNotEmpty()) { text.clear() }
+                Timber.d("OnLogoClickListener")
+            }
+            searchAdapter.setOnSearchItemClickListener{ position, title, subtitle ->
+                Timber.d("setOnSearchItemClickListener $position, $title, $subtitle")
+                setText(title)
+            }
+            searchView.adapter = searchAdapter
+        }
+
         // gridLayoutManager.findFirstCompletelyVisibleItemPosition()
         topCategoryNavigationBar.setCategorySelectListener(this)
         topCategorySelector.setCategorySelectListener(this)
@@ -89,9 +113,10 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     }
 
     override fun onBackPressed() {
-        if (searchActionMenuItem?.isActionViewExpanded == true) {
-            searchActionMenuItem!!.collapseActionView()
-        } else super.onBackPressed()
+        Timber.d("searchView open:${searchView.isOpen}, isLaidOut: ${searchView.isLaidOut}")
+        /*if (searchView.isOpen) {
+            searchView.close()
+        } else */super.onBackPressed()
     }
 
     override fun onPause() {
@@ -108,45 +133,39 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate( R.menu.activity_listing, menu)
-        menu?.also { setUpSearchActionMenuItem(it) }
+//        menu?.also {  }
         return true
     }
 
-    private fun setUpSearchActionMenuItem(menu: Menu) {
-        searchActionMenuItem = menu.findItem(R.id.action_search)?.apply {
-            searchView = actionView as? SearchView
-            searchView?.apply {
-                suggestionsAdapter = searchAdapter
-                setQueryHint("Search")
-                setIconified(false)
-                setOnQueryTextListener(
-                        object : SearchView.OnQueryTextListener {
-                            override fun onQueryTextSubmit(query: String?): Boolean {
-                                presenter.onQueryTextSubmit(query)
-                                return true
-                            }
-
-                            override fun onQueryTextChange(newText: String?): Boolean {
-                                presenter.onQueryTextChange(newText)
-                                return true
-                            }
-                        }
-                )
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.action_search -> {
+                searchView.open(item)
+                true
             }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
     /** search */
-    override fun updateSearchSuggestion(suggestions: List<String>) {
+    override fun updateSearchSuggestion(suggestions: List<String>?) {
         Timber.d("searchSuggestionPublishProcessor list: $suggestions")
+        this.suggestionList = suggestions
 
-//        val c = MatrixCursor(arrayOf(BaseColumns._ID, "query"))
-//        if (suggestions.isNotEmpty()) {
-//            for (i in 0..suggestions.size) {
-//                c.addRow(arrayOf(i, suggestions[i]))
-//            }
-//        }
-//        searchAdapter.changeCursor(c)
+        if (suggestions != null && suggestions.isNotEmpty()) {
+            val suggestionList = ArrayList<SearchItem>(suggestions.size)
+            suggestions.forEach{s ->
+                suggestionList.add(
+                        SearchItem(getContext()).also { it.title = s }
+                )
+            }
+
+            searchAdapter.suggestionsList = suggestionList
+        } else {
+            searchAdapter.suggestionsList = null
+        }
+
+        searchAdapter.notifyDataSetChanged()
     }
 
 
