@@ -69,7 +69,7 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
         val dataLoader = object : GridEndlessRecyclerViewScrollListener.DataLoader {
             override fun onLoadMore(): Boolean = presenter.loadMoreListings(1)
         }
-        val listingsLayoutManager  = GridLayoutManager(getContext(), column)
+        val listingsLayoutManager = GridLayoutManager(getContext(), column)
         val listingScrollListener = GridEndlessRecyclerViewScrollListener(listingsLayoutManager, dataLoader)
 
         listingRecyclerView.apply {

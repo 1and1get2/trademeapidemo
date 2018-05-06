@@ -10,8 +10,7 @@ import java.util.*
 /**
  * Formats dates like {@code /Date(1517668772283)/}.
  */
-class TradeMeDateTime(dateTime: Long){
-    var dateTime : Long = dateTime
+class TradeMeDateTime(private val dateTime: Long){
     constructor(dateTime: Date) : this(dateTime.time)
 
     override fun toString(): String {

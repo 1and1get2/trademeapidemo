@@ -1,6 +1,5 @@
 package com.example.derek.trademeapi.base
 
-import com.example.derek.trademeapi.base.BaseFragmentModule
 import dagger.Module
 
 /**

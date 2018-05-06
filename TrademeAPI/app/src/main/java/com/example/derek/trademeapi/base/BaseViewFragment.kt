@@ -1,9 +1,6 @@
 package com.example.derek.trademeapi.base
 
 import android.os.Bundle
-import com.example.derek.trademeapi.base.BaseFragment
-import com.example.derek.trademeapi.base.BaseView
-import com.example.derek.trademeapi.base.Presenter
 import javax.inject.Inject
 
 /**

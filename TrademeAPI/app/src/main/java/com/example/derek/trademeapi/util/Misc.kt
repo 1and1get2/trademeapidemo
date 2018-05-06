@@ -73,7 +73,7 @@ fun Menu.tintAllIcons(context: Context, @ColorRes color: Int) {
 
 fun Menu.tintAllIcons(@ColorInt color: Int) {
     forEach {
-        it?.tintMenuIconColor(color)
+        it.tintMenuIconColor(color)
     }
 }
 
