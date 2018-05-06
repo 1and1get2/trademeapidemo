@@ -9,7 +9,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.Schedulers
-import org.reactivestreams.Subscription
 import timber.log.Timber
 import java.util.*
 import javax.inject.Inject
@@ -44,11 +43,6 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     private var currentSearch: String? = null
 
     private val paginator: PublishProcessor<Int> = PublishProcessor.create()
-//    private val paginatorDisposable: Disposable
-
-    private var paginationSubscription: Subscription? = null
-
-
     private val searchSuggestionPublishProcessor: PublishProcessor<String> = PublishProcessor.create()
 
 
