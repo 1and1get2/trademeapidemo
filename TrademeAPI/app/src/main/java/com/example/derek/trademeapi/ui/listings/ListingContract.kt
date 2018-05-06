@@ -10,6 +10,9 @@ import com.example.derek.trademeapi.model.Listing
  */
 
 interface ListingView : BaseView<ListingPresenter> {
+
+    /** Persistent Presenter */
+    fun getPersistentPresenter() : ListingPresenter?
     /** category */
     fun setCurrentCategory(currentCategory: Category)
 
@@ -26,6 +29,8 @@ interface ListingView : BaseView<ListingPresenter> {
 
 
 interface ListingPresenter : BasePresenter<ListingView> {
+    /** Persistent Presenter */
+    fun setListingView(view: ListingView)
 
     /** category */
     fun onSelectCategory(currentCategory: Category?)

@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import com.crashlytics.android.Crashlytics
 import com.example.derek.trademeapi.BR
 import com.example.derek.trademeapi.R
+import com.example.derek.trademeapi.api.TradeMeApiService
 import com.example.derek.trademeapi.base.BaseActivity
 import com.example.derek.trademeapi.model.Category
 import com.example.derek.trademeapi.model.Listing
@@ -56,6 +57,9 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
 
     private val listingList : ArrayList<Listing> = ArrayList()
     private var suggestionList: List<String>? = null
+
+    @Inject
+    lateinit var apiService: TradeMeApiService
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,6 +123,8 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
     override fun onStart() {
         super.onStart()
         presenter.onViewCreated()
+
+        Timber.d("apiService: $apiService")
     }
 
     override fun onBackPressed() {
@@ -153,6 +159,12 @@ class ListingActivity : BaseActivity(), ListingView, CategorySelectListener {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    /** Presenter */
+    override fun getPersistentPresenter(): ListingPresenter? {
+        Timber.d("getPersistentPresenter")
+        return null
     }
 
     /** search */

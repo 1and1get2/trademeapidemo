@@ -9,10 +9,8 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.Schedulers
-import org.reactivestreams.Subscription
 import timber.log.Timber
 import java.util.*
-import javax.inject.Inject
 
 /**
  * Created by derek on 1/05/18.
@@ -25,12 +23,14 @@ import javax.inject.Inject
  * http://www.baeldung.com/rxjava-backpressure
  * Dealing with Backpressure with RxJava
  */
-class ListingPresenterImpl @Inject constructor(override val view: ListingView) : ListingPresenter {
+class ListingPresenterImpl /*@Inject */constructor(_view: ListingView, private val apiService: TradeMeApiService) : ListingPresenter {
+
+    override var view : ListingView? = _view
 
     private val compositeDisposable: CompositeDisposable by lazy { CompositeDisposable() }
 
-    @Inject
-    lateinit var apiService: TradeMeApiService
+/*    @Inject
+    lateinit var apiService: TradeMeApiService*/
 
     private var rootCategory: Category? = null
     private var currentCategory: Category? = null
@@ -44,13 +44,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     private var currentSearch: String? = null
 
     private val paginator: PublishProcessor<Int> = PublishProcessor.create()
-//    private val paginatorDisposable: Disposable
-
-    private var paginationSubscription: Subscription? = null
-
-
     private val searchSuggestionPublishProcessor: PublishProcessor<String> = PublishProcessor.create()
-
 
     private var tabLastTabTime: Long = 0
 
@@ -61,10 +55,18 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     }
 
     init {
+        this.view = _view
+    }
+
+    override fun onViewCreated() {
+        super.onViewCreated()
+
+        Timber.d("apiService: $apiService")
+
         paginator
                 .onBackpressureLatest()
 //                .onBackpressureDrop()
-                .doOnNext { view.showProgress() }
+                .doOnNext { view!!.showProgress() }
                 .concatMap { Flowable.range(currentPage + 1, it) }
                 .concatMap { Flowable.just(it) }
                 .doOnNext { currentPage = it }
@@ -89,12 +91,12 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                 .observeOn(AndroidSchedulers.mainThread(), false, 1)
                 .subscribe({
                     listingList.addAll(it.list)
-                    view.hideProgress(listingList.size, totalResultCount)
-                    view.updateListings(listingList.toList())
+                    view!!.hideProgress(listingList.size, totalResultCount)
+                    view!!.updateListings(listingList.toList())
 
                 }, {
-                    view.hideProgress(listingList.size, totalResultCount)
-                    view.showError("paginator: $it")
+                    view!!.hideProgress(listingList.size, totalResultCount)
+                    view!!.showError("paginator: $it")
                     Timber.e("paginator: $it")
                 }).also {
                     compositeDisposable.add(it)
@@ -117,18 +119,15 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                             map { it.name!! }?.distinct()?.toList() ?: listOf()
                     Timber.d("updateSearchSuggestion: $list")
                     checkMainThread()
-                    view.updateSearchSuggestion(list)
+                    view!!.updateSearchSuggestion(list)
 
                 }, {
-                    view.showError("searchSuggestionPublisher: $it")
+                    view!!.showError("searchSuggestionPublisher: $it")
                     Timber.e("searchSuggestionPublisher: $it")
                 }).also {
                     compositeDisposable.add(it)
                 }
-    }
 
-    override fun onViewCreated() {
-        super.onViewCreated()
 
         onSelectCategory(null) // load all listings
         loadCategories()
@@ -137,6 +136,14 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
     override fun onViewDestroyed() {
         super.onViewDestroyed()
         compositeDisposable.clear()
+        view = null
+    }
+
+    override fun setListingView(view: ListingView) {
+        this.view = view
+        view.updateListings(listingList)
+//        view.setCurrentCategory(currentCategory)
+        view.scrollToPosition(0)
     }
 
     /** load all categories */
@@ -150,7 +157,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
                         Timber.d("rootCategory set: $rootCategory")
                     }
                     .doOnNext {
-                        view.setCurrentCategory(it)
+                        view!!.setCurrentCategory(it)
                     }
                     .subscribe()
                     .also { compositeDisposable.add(it) }
@@ -169,7 +176,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
     override fun scrollToTop() {
         currentListingPosition = 0
-        view.scrollToPosition(0)
+        view!!.scrollToPosition(0)
     }
 
     /**
@@ -181,10 +188,10 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
 
             this.currentCategory = currentCategory
             reset()
-            view.updateListings(listingList.toList())
+            view!!.updateListings(listingList.toList())
 
             val newCategory = currentCategory ?: rootCategory
-            if (newCategory != null) view.setCurrentCategory(newCategory)
+            if (newCategory != null) view!!.setCurrentCategory(newCategory)
 
             loadMoreListings(INITIAL_LOAD_PAGES)
         } else {
@@ -215,7 +222,7 @@ class ListingPresenterImpl @Inject constructor(override val view: ListingView) :
             // TODO: uncomment this
             loadMoreListings(INITIAL_LOAD_PAGES)
             if (newText == null || newText.isEmpty()) {
-                view.updateSearchSuggestion(emptyList<String>())
+                view!!.updateSearchSuggestion(null)
             } else {
                 Timber.d("onQueryTextChange searchSuggestionPublishProcessor: $newText")
                 searchSuggestionPublishProcessor.onNext(newText)

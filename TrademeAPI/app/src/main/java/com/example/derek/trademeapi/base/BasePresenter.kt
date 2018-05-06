@@ -2,23 +2,23 @@ package com.example.derek.trademeapi.base
 
 import android.os.Bundle
 
-interface BasePresenter<out T : MVPView> : Presenter{
+interface BasePresenter<T : MVPView> : Presenter{
 //abstract class BasePresenter<out T : BasePresenter, out V : BaseView<T>>(protected val view: V) {
 //    init {
 //        inject()
 //    }
 
-    val view : T
+    var view : T?
 
     /**
      * This method may be called when the presenter view is created
      */
-    open fun onViewCreated(){}
+    fun onViewCreated(){}
 
     /**
      * This method may be called when the presenter view is destroyed
      */
-    open fun onViewDestroyed(){}
+    fun onViewDestroyed(){}
 
     /**
      * Injects the required dependencies
